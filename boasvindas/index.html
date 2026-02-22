@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Missão 1: O Planejamento é a Chave do Sucesso!</title>
+    <!-- Tailwind CSS para estilização rápida e responsiva -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Configuração do Tailwind para permitir dark mode por classe -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            light: '#4f46e5', // Indigo 600
+                            DEFAULT: '#4338ca', // Indigo 700
+                            dark: '#3730a3', // Indigo 800
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Phosphor Icons para os ícones -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        /* Transições suaves gerais */
+        * {
+            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+        }
+       
+        /* Ajuste base de fonte para o controle de acessibilidade */
+        html {
+            font-size: 16px;
+        }
+
+
+        .bg-gradient-main {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+
+        .dark .bg-gradient-main {
+            background: linear-gradient(135deg, #1e1e2f 0%, #151522 100%);
+        }
+
+
+        /* Animação para entrada do card */
+        @keyframes fadeInScale {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        .animate-fade-in {
+            animation: fadeInScale 0.4s ease-out forwards;
+        }
+    </style>
+</head>
+<body class="bg-gradient-main min-h-screen flex items-center justify-center p-4 font-sans text-gray-800 dark:text-gray-100 overflow-x-hidden">
+
+
+    <!-- Controles de Acessibilidade (Topo Direito) -->
+    <div class="fixed top-4 right-4 flex gap-2 z-50 bg-white/20 backdrop-blur-md p-2 rounded-lg shadow-lg">
+        <button onclick="toggleTheme()" class="p-2 rounded bg-gray-800 text-white hover:bg-gray-700 dark:bg-white dark:text-gray-900 transition-colors" title="Alternar Tema">
+            <i class="ph ph-sun dark:hidden text-lg"></i>
+            <i class="ph ph-moon hidden dark:block text-lg"></i>
+        </button>
+        <button onclick="changeFontSize(-0.1)" class="p-2 rounded bg-gray-800 text-white hover:bg-gray-700 dark:bg-white dark:text-gray-900 font-bold transition-colors" title="Diminuir Fonte">
+            A-
+        </button>
+        <button onclick="changeFontSize(0.1)" class="p-2 rounded bg-gray-800 text-white hover:bg-gray-700 dark:bg-white dark:text-gray-900 font-bold transition-colors" title="Aumentar Fonte">
+            A+
+        </button>
+    </div>
+
+
+    <!-- Container Principal do App -->
+    <div id="app" class="w-full max-w-3xl animate-fade-in">
+        <!-- O conteúdo será injetado aqui via JavaScript -->
+    </div>
+
+
+    <script>
+        // --- DADOS DO QUIZ ---
+        const quizData = [
+            {
+                question: "Considerando a realidade das escolas quilombolas, localizadas em territórios tradicionais, e a legislação que regulamenta o PDDE (Lei nº 11.947/2009 e resoluções do FNDE), qual é o principal objetivo do curso Conhecimentos Básicos para Gestão Administrativa e Financeira dos Recursos do PDDE, voltado aos gestores/as escolares responsáveis pela administração dos recursos financeiros da escola?",
+                options: [
+                    "Aprofundar os processos de gestão de recursos subsidiados pelo Fundo Nacional de Desenvolvimento da Educação (FNDE)",
+                    "Proporcionar lazer aos gestores escolares",
+                    "Ensinar a criação de projetos pedagógicos",
+                    "Oferecer cursos de aperfeiçoamento em diversas áreas educacionais"
+                ],
+                correctAnswer: 0
+            },
+            {
+                question: "Nos cursos de formação do PDDE, o porquinho “Dindin” é utilizado como mascote para facilitar a compreensão da gestão financeira. Pensando no cotidiano das escolas quilombolas — como o cuidado coletivo com os recursos para compra de materiais didáticos, pequenos reparos na escola ou aquisição de equipamentos — por que esse mascote foi escolhido?",
+                options: [
+                    "Por ser um animal fofo e divertido",
+                    "Por representar, culturalmente em nosso país, a área de finanças demonstrando ao gestor a importância da economia diária e gestão financeira.",
+                    "Por ser um símbolo de sorte",
+                    "Por ser fácil de desenhar"
+                ],
+                correctAnswer: 1
+            },
+            {
+                question: "De acordo com a ementa do curso Conhecimentos Básicos para Gestão Administrativa e Financeira dos Recursos do PDDE e as normas do FNDE, qual é o foco principal da formação oferecida aos gestores/as de escolas quilombolas que recebem recursos do programa?",
+                options: [
+                    "Desenvolvimento de projetos pedagógicos inovadores",
+                    "Elaboração de estratégias de captação de recursos privados",
+                    "Manutenção da regularidade funcional administrativa, financeira e contábil da UEx para continuidade do recebimento de recursos do PDDE",
+                    "Organização de eventos escolares"
+                ],
+                correctAnswer: 2
+            },
+            {
+                question: "Considerando a realidade das escolas quilombolas, onde muitas vezes é necessário decidir, de forma coletiva, sobre a compra de materiais pedagógicos, equipamentos ou melhorias na infraestrutura escolar, respeitando a identidade e o território quilombola, um dos objetivos específicos do curso Conhecimentos Básicos para Gestão Administrativa e Financeira dos Recursos do PDDE é:",
+                options: [
+                    "Ensinar a cozinhar para a merenda escolar",
+                    "Auxiliar em relação às prioridades de itens de custeio e capital a serem adquiridos",
+                    "Realizar auditorias externas nas escolas",
+                    "Desenvolver aplicativos para gestão escolar"
+                ],
+                correctAnswer: 1
+            },
+            {
+                question: "O Programa Dinheiro Direto na Escola (PDDE), regulamentado pelo FNDE e aplicado também às escolas quilombolas, foi criado com qual finalidade principal, considerando o fortalecimento da autonomia escolar e o atendimento às especificidades da Educação Escolar Quilombola, conforme as Diretrizes Curriculares Nacionais?",
+                options: [
+                    "Centralizar a aplicação dos recursos financeiros nas capitais",
+                    "Substituir completamente o papel do gestor escolar na administração dos recursos",
+                    "Criar um fundo de reserva para emergências nacionais",
+                    "Garantir que as escolas públicas tenham acesso a recursos financeiros para melhoria da infraestrutura, aquisição de materiais e desenvolvimento de projetos pedagógicos"
+                ],
+                correctAnswer: 3
+            },
+            {
+                question: "Considerando a gestão dos recursos públicos do PDDE nas escolas quilombolas, que exige organização coletiva, controle dos gastos e prestação de contas conforme a legislação do FNDE, segundo Chiavenato (2014), quais são as competências fundamentais para uma boa administração, essenciais ao trabalho do gestor/a escolar no território quilombola?",
+                options: [
+                    "Planejamento, organização, direção e controle",
+                    "Vendas, marketing, publicidade e inovação",
+                    "Negociação, improvisação, carisma e liderança",
+                    "Comunicação, ética, pontualidade e criatividade"
+                ],
+                correctAnswer: 0
+            },
+            {
+                question: "No cotidiano do gestor/a de uma escola quilombola — que precisa conciliar atividades pedagógicas, reuniões com a comunidade, organização documental do PDDE e cumprimento dos prazos do FNDE — qual é a principal função da Matriz de Eisenhower como ferramenta de gestão do tempo?",
+                options: [
+                    "Gerar relatórios financeiros automáticos",
+                    "Organizar a agenda de reuniões",
+                    "Definir quais tarefas devem ser feitas imediatamente, deixadas para depois, delegadas ou descartadas, baseando-se em importância e urgência",
+                    "Calcular o tempo de execução de cada tarefa"
+                ],
+                correctAnswer: 2
+            },
+            {
+                question: "Considerando as normas do PDDE e a necessidade de manter a escola quilombola regularizada para garantir a continuidade do recebimento dos recursos, qual das situações abaixo é um exemplo de tarefa urgente e importante no contexto da gestão escolar?",
+                options: [
+                    "O mandato da diretoria vence no dia seguinte e a ata precisa ser registrada e paga em cartório hoje com recurso do PDDE Básico para regularização",
+                    "Planejamento das aquisições ao longo do ano",
+                    "As bolas para as aulas de Educação Física encontram-se desgastadas",
+                    "Assistir lives e/ou realizar leituras de autoajuda"
+                ],
+                correctAnswer: 0
+            },
+            {
+                question: "No contexto da gestão dos recursos do PDDE em escolas quilombolas, onde o planejamento antecipado contribui para atender às necessidades do território, respeitando o calendário escolar e as decisões coletivas da comunidade, uma tarefa importante, mas não urgente, poderia ser:",
+                options: [
+                    "Resolver uma crise financeira imediata",
+                    "O planejamento das aquisições ao longo do ano",
+                    "Atender a uma interrupção inesperada",
+                    "Lidar com uma emergência de infraestrutura"
+                ],
+                correctAnswer: 1
+            },
+            {
+                question: "Ao aplicar a Matriz de Eisenhower na gestão do PDDE em uma escola quilombola, considerando o impacto das decisões para o funcionamento da escola e o cumprimento da legislação do FNDE, qual é a principal característica que diferencia tarefas urgentes de tarefas importantes?",
+                options: [
+                    "O custo da tarefa",
+                    "O tempo necessário para a execução",
+                    "O impacto no longo prazo e o prazo de ação imediata",
+                    "A pessoa responsável pela execução"
+                ],
+                correctAnswer: 2
+            }
+        ];
+
+
+        // --- ESTADO DO JOGO ---
+        let currentState = 'start'; // start, quiz, end
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let canAnswer = true;
+        let currentFontSize = 1; // rem
+
+
+        // --- ELEMENTOS DO DOM ---
+        const appDiv = document.getElementById('app');
+        const htmlElement = document.documentElement;
+
+
+        // --- FUNÇÕES DE ACESSIBILIDADE ---
+        function toggleTheme() {
+            htmlElement.classList.toggle('dark');
+        }
+
+
+        function changeFontSize(step) {
+            currentFontSize += step;
+            // Limites de tamanho
+            if(currentFontSize < 0.8) currentFontSize = 0.8;
+            if(currentFontSize > 1.5) currentFontSize = 1.5;
+            htmlElement.style.fontSize = currentFontSize + 'rem';
+        }
+
+
+        // --- FUNÇÕES DE RENDERIZAÇÃO ---
+        function render() {
+            appDiv.innerHTML = ''; // Limpa o container
+           
+            const cardWrapper = document.createElement('div');
+            cardWrapper.className = 'bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-6 md:p-10 w-full animate-fade-in border border-gray-100 dark:border-gray-700';
+
+
+            if (currentState === 'start') {
+                cardWrapper.innerHTML = `
+                    <div class="text-center space-y-6">
+                        <h1 class="text-3xl font-bold text-gray-900 dark:text-white flex items-center justify-center gap-2">
+                            <span class="text-4xl">🎯</span> Missão 1: O Planejamento é a Chave do Sucesso!
+                        </h1>
+                       
+                        <div class="bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl p-6 text-left space-y-4">
+                            <h2 class="text-xl font-bold text-brand-light dark:text-indigo-400 flex items-center gap-2">
+                                <i class="ph-bold ph-arrows-clockwise text-2xl"></i> Organizando a Casa
+                            </h2>
+                            <p class="text-gray-700 dark:text-gray-300">
+                                <strong class="text-gray-900 dark:text-gray-100">Conteúdo Principal:</strong> Uma introdução essencial ao PDDE e ao papel fundamental do novo gestor nas escolas quilombolas.
+                            </p>
+                            <p class="text-gray-700 dark:text-gray-300">
+                                <strong class="text-gray-900 dark:text-gray-100">Desafio:</strong> Teste seus conhecimentos sobre a legislação do FNDE e a realidade territorial no "Quiz de Boas-Vindas"!
+                            </p>
+                        </div>
+
+
+                        <button onclick="startGame()" class="bg-brand-light hover:bg-brand text-white font-bold py-4 px-8 rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all w-full sm:w-auto text-lg">
+                            Começar Desafio!
+                        </button>
+                    </div>
+                `;
+            }
+            else if (currentState === 'quiz') {
+                const q = quizData[currentQuestionIndex];
+                const progress = ((currentQuestionIndex) / quizData.length) * 100;
+
+
+                let optionsHtml = q.options.map((opt, index) => `
+                    <button onclick="selectAnswer(${index})" id="btn-${index}" class="option-btn w-full text-left p-4 rounded-xl border-2 border-gray-200 dark:border-gray-600 hover:border-brand-light dark:hover:border-brand-light hover:bg-indigo-50 dark:hover:bg-indigo-900/30 text-gray-700 dark:text-gray-200 transition-all">
+                        <span class="font-bold mr-2 text-brand-light dark:text-indigo-400">${String.fromCharCode(97 + index)})</span> ${opt}
+                    </button>
+                `).join('');
+
+
+                cardWrapper.innerHTML = `
+                    <div class="space-y-6">
+                        <div class="flex justify-between items-center text-sm font-semibold text-gray-500 dark:text-gray-400">
+                            <span>Pergunta ${currentQuestionIndex + 1} de ${quizData.length}</span>
+                            <span>Pontuação: ${score}</span>
+                        </div>
+                       
+                        <!-- Barra de Progresso -->
+                        <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
+                            <div class="bg-brand-light h-2.5 rounded-full transition-all duration-500" style="width: ${progress}%"></div>
+                        </div>
+
+
+                        <h2 class="text-xl font-medium text-gray-900 dark:text-white leading-relaxed">
+                            ${q.question}
+                        </h2>
+
+
+                        <div class="space-y-3 mt-6">
+                            ${optionsHtml}
+                        </div>
+                    </div>
+                `;
+            }
+            else if (currentState === 'end') {
+                const percentage = Math.round((score / quizData.length) * 100);
+                let message = "";
+                let icon = "";
+
+
+                if (percentage === 100) {
+                    message = "Excelente! Você demonstrou domínio total sobre a gestão do PDDE nas escolas quilombolas.";
+                    icon = "🏆";
+                } else if (percentage >= 70) {
+                    message = "Muito bom! Você tem um ótimo entendimento sobre os processos de gestão.";
+                    icon = "🌟";
+                } else {
+                    message = "Continue estudando! É importante revisar as legislações do FNDE para uma boa gestão.";
+                    icon = "📚";
+                }
+
+
+                cardWrapper.innerHTML = `
+                    <div class="text-center space-y-6">
+                        <div class="text-6xl mb-4">${icon}</div>
+                        <h2 class="text-3xl font-bold text-gray-900 dark:text-white">Desafio Concluído!</h2>
+                       
+                        <div class="bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-xl p-8">
+                            <p class="text-lg text-gray-600 dark:text-gray-300 mb-2">Sua pontuação final:</p>
+                            <p class="text-5xl font-black text-brand-light dark:text-indigo-400 mb-4">${score} <span class="text-2xl text-gray-500">/ ${quizData.length}</span></p>
+                            <p class="text-gray-800 dark:text-gray-200 font-medium">${message}</p>
+                        </div>
+
+
+                        <button onclick="restartGame()" class="bg-brand-light hover:bg-brand text-white font-bold py-4 px-8 rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all w-full sm:w-auto text-lg flex items-center justify-center gap-2 mx-auto">
+                            <i class="ph-bold ph-arrow-counter-clockwise"></i> Jogar Novamente
+                        </button>
+                    </div>
+                `;
+            }
+
+
+            appDiv.appendChild(cardWrapper);
+        }
+
+
+        // --- LÓGICA DO JOGO ---
+        function startGame() {
+            currentQuestionIndex = 0;
+            score = 0;
+            currentState = 'quiz';
+            canAnswer = true;
+            render();
+        }
+
+
+        function selectAnswer(selectedIndex) {
+            if (!canAnswer) return;
+            canAnswer = false;
+
+
+            const q = quizData[currentQuestionIndex];
+            const isCorrect = selectedIndex === q.correctAnswer;
+           
+            const buttons = document.querySelectorAll('.option-btn');
+           
+            // Estiliza os botões após a resposta
+            buttons.forEach((btn, index) => {
+                btn.classList.remove('hover:border-brand-light', 'hover:bg-indigo-50', 'dark:hover:bg-indigo-900/30', 'border-gray-200', 'dark:border-gray-600');
+               
+                if (index === q.correctAnswer) {
+                    // Resposta certa: Verde
+                    btn.classList.add('bg-green-100', 'border-green-500', 'text-green-800', 'dark:bg-green-900/40', 'dark:border-green-400', 'dark:text-green-100');
+                } else if (index === selectedIndex && !isCorrect) {
+                    // Resposta errada (a que o usuário clicou): Vermelha
+                    btn.classList.add('bg-red-100', 'border-red-500', 'text-red-800', 'dark:bg-red-900/40', 'dark:border-red-400', 'dark:text-red-100');
+                } else {
+                    // Outras opções ficam opacas
+                    btn.classList.add('opacity-50', 'border-gray-200', 'dark:border-gray-700');
+                }
+            });
+
+
+            if (isCorrect) {
+                score++;
+            }
+
+
+            // Aguarda um pouco para o usuário ver o resultado e vai para a próxima
+            setTimeout(() => {
+                currentQuestionIndex++;
+                if (currentQuestionIndex < quizData.length) {
+                    canAnswer = true;
+                    render();
+                } else {
+                    currentState = 'end';
+                    render();
+                }
+            }, 2000);
+        }
+
+
+        function restartGame() {
+            startGame();
+        }
+
+
+        // --- INICIALIZAÇÃO ---
+        render();
+    </script>
+</body>
+</html>
