@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Atividade de Arrastar e Soltar</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1a1a1a; /* Fundo escuro */
+            color: #f0f0f0; /* Texto claro */
+        }
+        .drop-zone {
+            display: inline-block;
+            min-width: 100px;
+            height: 40px;
+            padding: 0 12px;
+            border: 2px dashed #555;
+            border-radius: 8px;
+            background-color: #2a2a2a;
+            text-align: center;
+            line-height: 36px;
+            transition: background-color 0.3s, border-color 0.3s;
+        }
+        .drop-zone.over {
+            background-color: #3a3a3a;
+            border-color: #777;
+        }
+        .draggable {
+            cursor: grab;
+            user-select: none;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .draggable:active {
+            cursor: grabbing;
+            transform: scale(1.05);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+        }
+        .feedback {
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-top: 4px;
+            height: 20px;
+        }
+        .correct {
+            color: #4ade80; /* Verde */
+        }
+        .incorrect {
+            color: #f87171; /* Vermelho */
+        }
+        .filled {
+            border-style: solid;
+            border-color: #8b5cf6; /* Roxo */
+            background-color: #8b5cf6;
+            color: white;
+        }
+        #confetti-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 100;
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+
+
+    <div id="activity-container" class="w-full max-w-4xl mx-auto p-6 md:p-8 bg-[#2c2c2c] rounded-2xl shadow-2xl">
+        <h1 class="text-2xl md:text-3xl font-bold text-center mb-6 text-white">Complete as Frases</h1>
+        <p class="text-center text-gray-400 mb-8">Arraste as palavras para os espaços corretos.</p>
+
+
+        <!-- Questões -->
+        <div id="questions-container" class="space-y-8">
+            <!-- Questão 1 -->
+            <div class="question-item">
+                <p class="text-lg text-gray-300 flex flex-wrap items-center gap-2">
+                    1. A conciliação bancária compara as
+                    <span class="drop-zone" data-answer="entradas"></span> e
+                    <span class="drop-zone" data-answer="saídas"></span>
+                    apontadas no extrato com as despesas efetivamente realizadas.
+                </p>
+                <div class="feedback"></div>
+            </div>
+
+
+            <!-- Questão 2 -->
+            <div class="question-item">
+                <p class="text-lg text-gray-300 flex flex-wrap items-center gap-2">
+                    2. Os saldos do PDDE devem ser separados entre
+                    <span class="drop-zone" data-answer="custeio"></span> e
+                    <span class="drop-zone" data-answer="capital"></span>
+                    para facilitar a prestação de contas e a aplicação correta em projetos, como horta comunitária ou aquisição de livros sobre cultura quilombola.
+                </p>
+                <div class="feedback"></div>
+            </div>
+
+
+            <!-- Questão 3 -->
+            <div class="question-item">
+                <p class="text-lg text-gray-300 flex flex-wrap items-center gap-2">
+                    3. O
+                    <span class="drop-zone" data-answer="Extrato"></span>
+                    bancário apresenta todas as transações realizadas, enquanto o
+                    <span class="drop-zone" data-answer="Saldo"></span>
+                    bancário mostra o valor disponível em conta.
+                </p>
+                <div class="feedback"></div>
+            </div>
+
+
+            <!-- Questão 4 -->
+            <div class="question-item">
+                <p class="text-lg text-gray-300 flex flex-wrap items-center gap-2">
+                    4. O
+                    <span class="drop-zone" data-answer="Lucro"></span>
+                    é o valor que sobra após subtrair as despesas da receita, permitindo planejar futuras aquisições para a escola quilombola.
+                </p>
+                <div class="feedback"></div>
+            </div>
+
+
+            <!-- Questão 5 -->
+             <div class="question-item">
+                <p class="text-lg text-gray-300 flex flex-wrap items-center gap-2">
+                    5. Um
+                    <span class="drop-zone" data-answer="Orçamento"></span>
+                    é um plano financeiro para um período futuro, ajudando a priorizar gastos com base em necessidades pedagógicas e comunitárias.
+                </p>
+                <div class="feedback"></div>
+            </div>
+        </div>
+
+
+        <!-- Opções Arrastáveis -->
+        <div id="options-container" class="mt-12 p-4 bg-[#2a2a2a] rounded-lg flex flex-wrap justify-center items-center gap-4">
+            <!-- As opções serão inseridas aqui pelo JavaScript -->
+        </div>
+    </div>
+
+
+    <!-- Tela de Conclusão -->
+    <div id="completion-screen" class="hidden fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4">
+        <div class="text-center p-6 md:p-8 bg-white rounded-2xl shadow-xl text-gray-800 transform transition-all scale-95 max-w-2xl w-full">
+             <h2 class="text-3xl md:text-4xl font-bold text-purple-600 mb-4">Parabéns!</h2>
+             <p class="text-lg md:text-xl mb-6">Você concluiu a atividade com sucesso!</p>
+             
+             <!-- Feedback Contextualizado -->
+             <div class="bg-purple-50 p-4 md:p-6 rounded-lg text-left text-sm md:text-base text-gray-700 space-y-4 mb-6">
+                <h3 class="font-bold text-purple-800 text-lg border-b border-purple-200 pb-2">Feedback Contextualizado</h3>
+                <p><strong>Custeio e Capital:</strong> Separar custeio e capital permite priorizar itens de consumo diário (custeio) e investimentos duradouros (capital), como materiais pedagógicos, móveis ou equipamentos para a horta escolar.</p>
+                <p><strong>Conciliação Bancária:</strong> A conciliação bancária garante que os recursos do PDDE sejam aplicados de forma transparente e correta, fortalecendo a confiança da comunidade quilombola na gestão escolar.</p>
+             </div>
+
+
+             <button onclick="location.reload()" class="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-lg transition-colors">
+                 Jogar Novamente
+             </button>
+        </div>
+    </div>
+    <canvas id="confetti-canvas"></canvas>
+
+
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Definição das opções de resposta
+            const options = [
+                "entradas", "saídas", "custeio", "capital",
+                "Extrato", "Saldo", "Lucro", "Orçamento"
+            ];
+
+
+            const optionsContainer = document.getElementById('options-container');
+            const dropZones = document.querySelectorAll('.drop-zone');
+            let correctAnswers = 0;
+            const totalDropZones = dropZones.length;
+
+
+            // Embaralha e adiciona as opções na tela
+            shuffleArray(options).forEach(text => {
+                const draggable = document.createElement('div');
+                draggable.textContent = text;
+                draggable.className = 'draggable bg-white text-gray-800 font-semibold py-2 px-5 rounded-lg shadow-md';
+                draggable.draggable = true;
+                draggable.id = 'drag-' + text.toLowerCase();
+                optionsContainer.appendChild(draggable);
+            });
+
+
+            const draggables = document.querySelectorAll('.draggable');
+
+
+            // Adiciona eventos de arrastar para as opções
+            draggables.forEach(draggable => {
+                draggable.addEventListener('dragstart', (e) => {
+                    e.dataTransfer.setData('text/plain', e.target.id);
+                    setTimeout(() => {
+                        e.target.classList.add('invisible');
+                    }, 0);
+                });
+
+
+                draggable.addEventListener('dragend', (e) => {
+                    e.target.classList.remove('invisible');
+                });
+            });
+
+
+            // Adiciona eventos de soltar para as áreas de resposta
+            dropZones.forEach(zone => {
+                zone.addEventListener('dragover', (e) => {
+                    e.preventDefault(); // Necessário para permitir o drop
+                    if (!zone.classList.contains('filled')) {
+                        zone.classList.add('over');
+                    }
+                });
+
+
+                zone.addEventListener('dragleave', () => {
+                    zone.classList.remove('over');
+                });
+
+
+                zone.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    zone.classList.remove('over');
+
+
+                    if (zone.classList.contains('filled')) return; // Impede soltar em área já preenchida
+
+
+                    const id = e.dataTransfer.getData('text/plain');
+                    const draggableElement = document.getElementById(id);
+                   
+                    if(!draggableElement) return; // Evita erros se soltar algo inválido
+
+
+                    const questionItem = zone.closest('.question-item');
+                    const feedbackElement = questionItem.querySelector('.feedback');
+
+
+                    // Verifica se a resposta está correta
+                    if (draggableElement.textContent.toLowerCase() === zone.dataset.answer.toLowerCase()) {
+                        zone.textContent = draggableElement.textContent;
+                        zone.classList.add('filled');
+                        draggableElement.remove(); // Remove a opção usada
+                       
+                        feedbackElement.textContent = 'Correto!';
+                        feedbackElement.className = 'feedback correct';
+                        correctAnswers++;
+                       
+                        // Verifica se todas as respostas estão corretas
+                        if (correctAnswers === totalDropZones) {
+                            showCompletionScreen();
+                        }
+                    } else {
+                        feedbackElement.textContent = 'Tente novamente!';
+                        feedbackElement.className = 'feedback incorrect';
+                    }
+                   
+                    // Limpa o feedback após alguns segundos
+                    setTimeout(() => {
+                        feedbackElement.textContent = '';
+                    }, 2000);
+                });
+            });
+
+
+            // Função para embaralhar o array de opções
+            function shuffleArray(array) {
+                for (let i = array.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [array[i], array[j]] = [array[j], array[i]];
+                }
+                return array;
+            }
+
+
+            // Função para mostrar a tela de conclusão e os confetes
+            function showCompletionScreen() {
+                const completionScreen = document.getElementById('completion-screen');
+                completionScreen.classList.remove('hidden');
+                setTimeout(() => {
+                    completionScreen.querySelector('div').classList.remove('scale-95');
+                    completionScreen.querySelector('div').classList.add('scale-100');
+                }, 100);
+                launchConfetti();
+            }
+
+
+            // --- Lógica dos Confetes ---
+            const canvas = document.getElementById('confetti-canvas');
+            const ctx = canvas.getContext('2d');
+            let confettiParticles = [];
+            const colors = ['#f9a8d4', '#a78bfa', '#818cf8', '#60a5fa', '#38bdf8', '#22d3ee', '#4ade80', '#facc15'];
+
+
+            function launchConfetti() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+
+
+                for (let i = 0; i < 150; i++) {
+                    confettiParticles.push(createParticle());
+                }
+                animateConfetti();
+            }
+
+
+            function createParticle() {
+                const x = Math.random() * canvas.width;
+                const y = Math.random() * canvas.height - canvas.height;
+                const size = Math.random() * 10 + 5;
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                const speedX = Math.random() * 10 - 5;
+                const speedY = Math.random() * 5 + 2;
+                return { x, y, size, color, speedX, speedY };
+            }
+
+
+            function animateConfetti() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                confettiParticles.forEach((p, index) => {
+                    p.y += p.speedY;
+                    p.x += p.speedX;
+
+
+                    ctx.fillStyle = p.color;
+                    ctx.beginPath();
+                    ctx.rect(p.x, p.y, p.size, p.size);
+                    ctx.fill();
+
+
+                    if (p.y > canvas.height) {
+                        confettiParticles.splice(index, 1);
+                    }
+                });
+
+
+                if (confettiParticles.length > 0) {
+                    requestAnimationFrame(animateConfetti);
+                }
+            }
+        });
+    </script>
+
+
+</body>
+</html>
