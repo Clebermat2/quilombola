@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mapa do Tesouro da UEx</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Creepster&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --font-scale: 1.0;
+        }
+        html {
+            font-size: calc(16px * var(--font-scale));
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #fdf2e0;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .treasure-font {
+            font-family: 'Creepster', cursive;
+        }
+        .main-container {
+            background-color: #fdf2e0;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .map-container {
+            background-image: url('https://www.transparenttextures.com/patterns/old-paper.png');
+            background-color: #faebd7;
+            border: 4px solid #78350f;
+            position: relative;
+            height: 500px;
+        }
+        .map-point {
+            position: absolute; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.25rem; transition: all 0.5s ease-in-out; border: 3px solid transparent;
+        }
+        .map-point.locked { background-color: #a1a1aa; color: #e4e4e7; border-color: #71717a; }
+        .map-point.active { background-color: #f59e0b; color: white; border-color: #b45309; transform: scale(1.25); box-shadow: 0 0 20px rgba(245, 158, 11, 0.8); z-index: 10; }
+        .map-point.completed { background-color: #16a34a; color: white; border-color: #14532d; }
+        .map-path { stroke-dasharray: 1000; stroke-dashoffset: 1000; transition: stroke-dashoffset 1.5s ease-in-out; stroke: #78350f; stroke-width: 5px; fill: none; stroke-linecap: round; }
+        .map-path.revealed { stroke-dashoffset: 0; }
+        #pirate-marker { position: absolute; font-size: 2.5rem; transition: all 1.5s ease-in-out; z-index: 20; transform: translate(-50%, -50%); }
+        .treasure-chest { position: absolute; font-size: 3rem; transform: translate(-50%, -50%) scale(0); transition: transform 0.5s ease-in-out 1s; }
+        .treasure-chest.visible { transform: translate(-50%, -50%) scale(1); }
+
+
+        /* Estilos de Alto Contraste */
+        .high-contrast, .high-contrast body {
+            background-color: #ffffff !important;
+            color: #000000 !important;
+        }
+        .high-contrast .main-container,
+        .high-contrast .map-container,
+        .high-contrast .bg-amber-50\/50 {
+             background-color: #ffffff !important;
+             background-image: none !important;
+        }
+        .high-contrast .text-amber-900, .high-contrast .text-amber-800, .high-contrast .text-amber-700 {
+            color: #000000 !important;
+        }
+        .high-contrast .border-amber-600, .high-contrast .border-amber-700, .high-contrast .map-container {
+            border-color: #000000 !important;
+        }
+        .high-contrast .bg-amber-700 {
+            background-color: #000000 !important;
+            color: #ffffff !important;
+        }
+        .high-contrast #answer-input {
+            background-color: #ffffff !important;
+            color: #000000 !important;
+        }
+        .high-contrast .map-path {
+            stroke: #000000;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+    <div id="main-container" class="w-full max-w-6xl bg-amber-100 rounded-2xl shadow-2xl p-6 md:p-8 relative">
+
+
+        <!-- Controles de Acessibilidade -->
+        <div class="absolute top-4 right-4 z-50 flex gap-2">
+            <button id="contrast-toggle" title="Alternar Alto Contraste" class="bg-gray-700 text-white w-10 h-10 rounded-full flex items-center justify-center text-lg hover:bg-black transition">◐</button>
+            <button id="font-decrease" title="Diminuir Fonte" class="bg-gray-700 text-white w-10 h-10 rounded-full flex items-center justify-center text-lg hover:bg-black transition">A-</button>
+            <button id="font-increase" title="Aumentar Fonte" class="bg-gray-700 text-white w-10 h-10 rounded-full flex items-center justify-center text-lg hover:bg-black transition">A+</button>
+        </div>
+
+
+
+
+        <!-- Tela de Abertura -->
+        <div id="intro-container" class="text-center p-8 flex flex-col items-center justify-center">
+             <h1 class="text-7xl md:text-8xl font-bold text-amber-900 treasure-font tracking-wider">🎯 Mapa do Tesouro</h1>
+             <p class="text-amber-700 mt-4 text-2xl max-w-2xl">
+                Passo a passo do mapa que revela o caminho para habilitar sua UEx.
+             </p>
+             <button id="start-button" class="mt-8 bg-amber-700 text-white font-bold text-2xl px-12 py-5 rounded-lg hover:bg-amber-800 focus:outline-none focus:ring-4 focus:ring-amber-400 transition duration-300 transform hover:scale-105 shadow-lg">
+                Começar o Desafio
+            </button>
+        </div>
+
+
+        <!-- Tela do Jogo (inicialmente oculta) -->
+        <div id="game-container" class="hidden">
+            <header class="text-center mb-6">
+                <h1 class="text-5xl md:text-6xl font-bold text-amber-900 treasure-font tracking-wider">Mapa do Tesouro da UEx</h1>
+                <p class="text-amber-700 mt-2 text-xl">Siga o caminho, decifre os enigmas e encontre o tesouro!</p>
+            </header>
+
+
+            <div class="flex flex-col lg:flex-row gap-6 items-center">
+                <!-- Mapa Visual -->
+                <div class="w-full lg:w-2/3 map-container rounded-lg shadow-inner">
+                    <svg class="absolute top-0 left-0 w-full h-full" viewbox="0 0 100 100" preserveAspectRatio="none">
+                        <path id="path-1" class="map-path" d="M 15 20 Q 25 40 45 45" />
+                        <path id="path-2" class="map-path" d="M 45 45 Q 60 40 75 30" />
+                        <path id="path-3" class="map-path" d="M 75 30 Q 80 55 80 80" />
+                    </svg>
+                    <div id="point-0" class="map-point" style="top: 20%; left: 15%; transform: translate(-50%, -50%);">1</div>
+                    <div id="point-1" class="map-point" style="top: 45%; left: 45%; transform: translate(-50%, -50%);">2</div>
+                    <div id="point-2" class="map-point" style="top: 30%; left: 75%; transform: translate(-50%, -50%);">3</div>
+                    <div id="point-3" class="map-point" style="top: 80%; left: 80%; transform: translate(-50%, -50%);">4</div>
+                    <div id="treasure-chest" class="treasure-chest" style="top: 80%; left: 80%;">🏆</div>
+                    <div id="pirate-marker">🏴‍☠️</div>
+                </div>
+
+
+                <!-- Área da Pergunta -->
+                <div class="w-full lg:w-1/3 bg-amber-50/50 p-6 rounded-lg border-2 border-dashed border-amber-600">
+                    <div id="step-container">
+                        <h2 id="step-title" class="text-2xl font-bold text-amber-900 mb-2"></h2>
+                        <!-- min-h-[120px] para garantir que o texto não "empurre" os elementos abaixo ao trocar de tela -->
+                        <p id="step-clue" class="text-amber-800 mb-4 min-h-[120px] text-lg"></p>
+                    </div>
+                    <div class="flex flex-col gap-3">
+                        <input type="text" id="answer-input" placeholder="Sua resposta..." class="w-full px-4 py-3 text-xl text-amber-900 bg-white border-2 border-amber-700 rounded-lg focus:ring-4 focus:ring-amber-400 focus:border-amber-700 focus:outline-none transition duration-300">
+                        <button id="submit-button" class="w-full bg-amber-700 text-white font-bold text-xl px-8 py-4 rounded-lg hover:bg-amber-800 focus:outline-none focus:ring-4 focus:ring-amber-400 transition duration-300 transform hover:scale-105">
+                            Verificar
+                        </button>
+                    </div>
+                    <p id="feedback-message" class="mt-3 text-center h-6 font-semibold text-lg"></p>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- Tela Final -->
+        <div id="treasure-container" class="hidden text-center p-8">
+             <h1 class="text-5xl md:text-6xl font-bold text-amber-900 treasure-font tracking-wider">Tesouro Encontrado!</h1>
+            <div class="text-8xl my-6 animate-bounce">🏆</div>
+            <p class="text-2xl text-amber-800 bg-amber-100/70 p-6 rounded-lg border-2 border-amber-600">
+                Parabéns! Você decifrou todos os enigmas e concluiu a jornada! Sua UEx está com o caminho livre para ser habilitada. Com organização e seguindo esses passos, você garantirá o sucesso na gestão dos recursos para a sua escola. Continue o ótimo trabalho!
+            </p>
+        </div>
+    </div>
+
+
+    <script>
+        // --- Configuração do Jogo ---
+        const treasureMap = [
+            {
+                step: "Passo 1: Formalização da UEx",
+                clue: "É o documento principal que organiza a escola e a associação comunitária, funcionando como a “constituição” da escola quilombola.",
+                answer: "ESTATUTO",
+                pos: { top: '20%', left: '15%' }
+            },
+            {
+                step: "Passo 2: Eleição da Diretoria",
+                clue: "É a reunião formal da comunidade quilombola, onde os membros da gestão da escola são escolhidos de forma coletiva e democrática, garantindo participação da associação de moradores, respeitando o PDDE e o FNDE.",
+                answer: "ASSEMBLEIA",
+                pos: { top: '45%', left: '45%' }
+            },
+            {
+                step: "Passo 3: Abertura de Conta",
+                clue: "É o número de identificação da UEx na Receita Federal, necessário para abrir a conta bancária onde os recursos do PDDE serão depositados, permitindo o controle financeiro da escola quilombola.",
+                answer: "CNPJ",
+                pos: { top: '30%', left: '75%' }
+            },
+            {
+                step: "Passo 4: Cadastro no Sistema",
+                clue: "É o sistema web do FNDE para gerenciar o Dinheiro Direto na Escola, registrar movimentações e prestar contas de forma legal e segura, garantindo transparência e respeito às normas da Educação Escolar Quilombola.",
+                answer: "PDDEWEB",
+                pos: { top: '80%', left: '80%' }
+            }
+        ];
+        let currentStep = 0;
+        let fontScale = 1.0;
+
+
+        // --- Elementos do DOM ---
+        const elements = {
+            mainContainer: document.getElementById('main-container'),
+            introContainer: document.getElementById('intro-container'),
+            startButton: document.getElementById('start-button'),
+            stepTitle: document.getElementById('step-title'),
+            stepClue: document.getElementById('step-clue'),
+            answerInput: document.getElementById('answer-input'),
+            submitButton: document.getElementById('submit-button'),
+            feedbackMessage: document.getElementById('feedback-message'),
+            gameContainer: document.getElementById('game-container'),
+            treasureContainer: document.getElementById('treasure-container'),
+            pirateMarker: document.getElementById('pirate-marker'),
+            treasureChest: document.getElementById('treasure-chest'),
+            points: treasureMap.map((_, i) => document.getElementById(`point-${i}`)),
+            paths: treasureMap.map((_, i) => document.getElementById(`path-${i+1}`)).filter(p => p),
+            contrastToggle: document.getElementById('contrast-toggle'),
+            fontIncrease: document.getElementById('font-increase'),
+            fontDecrease: document.getElementById('font-decrease'),
+        };
+
+
+        // --- Funções de Acessibilidade ---
+        function toggleHighContrast() {
+            elements.mainContainer.classList.toggle('high-contrast');
+        }
+
+
+        function changeFontSize(direction) {
+            if (direction === 'increase' && fontScale < 1.5) {
+                fontScale += 0.1;
+            } else if (direction === 'decrease' && fontScale > 0.8) {
+                fontScale -= 0.1;
+            }
+            document.documentElement.style.setProperty('--font-scale', fontScale);
+        }
+
+
+
+
+        // --- Funções do Jogo ---
+        function startGame() {
+            elements.introContainer.classList.add('hidden');
+            elements.gameContainer.classList.remove('hidden');
+            loadStep();
+        }
+
+
+        function updateMap() {
+            elements.points.forEach((point, index) => {
+                point.classList.remove('active', 'completed', 'locked');
+                if (index < currentStep) { point.classList.add('completed'); }
+                else if (index === currentStep) { point.classList.add('active'); }
+                else { point.classList.add('locked'); }
+            });
+            const targetPos = treasureMap[currentStep].pos;
+            elements.pirateMarker.style.top = targetPos.top;
+            elements.pirateMarker.style.left = targetPos.left;
+            elements.paths.forEach((path, index) => {
+                if (index < currentStep) { path.classList.add('revealed'); }
+            });
+        }
+
+
+        function loadStep() {
+            if (currentStep < treasureMap.length) {
+                const stepData = treasureMap[currentStep];
+                elements.stepTitle.textContent = stepData.step;
+                elements.stepClue.textContent = `Dica: ${stepData.clue}`;
+                elements.answerInput.value = '';
+                elements.feedbackMessage.textContent = '';
+                elements.answerInput.focus();
+                updateMap();
+            } else {
+                showTreasure();
+            }
+        }
+
+
+        function normalizeString(text) {
+            return text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().trim();
+        }
+
+
+        function checkAnswer() {
+            const userAnswer = normalizeString(elements.answerInput.value);
+            const correctAnswer = normalizeString(treasureMap[currentStep].answer);
+
+
+            if (userAnswer === correctAnswer) {
+                elements.feedbackMessage.textContent = 'Correto! Avançando no mapa...';
+                elements.feedbackMessage.classList.remove('text-red-600');
+                elements.feedbackMessage.classList.add('text-green-600');
+                elements.answerInput.disabled = true;
+                elements.submitButton.disabled = true;
+                currentStep++;
+                setTimeout(() => {
+                    loadStep();
+                    elements.answerInput.disabled = false;
+                    elements.submitButton.disabled = false;
+                }, 1800);
+            } else {
+                elements.feedbackMessage.textContent = 'Incorreto. Tente novamente!';
+                elements.feedbackMessage.classList.add('text-red-600');
+                elements.feedbackMessage.classList.remove('text-green-600');
+            }
+        }
+
+
+        function showTreasure() {
+            elements.pirateMarker.style.opacity = 0;
+            elements.treasureChest.classList.add('visible');
+            setTimeout(() => {
+                elements.gameContainer.classList.add('hidden');
+                elements.treasureContainer.classList.remove('hidden');
+            }, 1000);
+        }
+
+
+        // --- Event Listeners ---
+        elements.startButton.addEventListener('click', startGame);
+        elements.submitButton.addEventListener('click', checkAnswer);
+        elements.answerInput.addEventListener('keyup', (event) => {
+            if (event.key === 'Enter') checkAnswer();
+        });
+
+
+        // Listeners de Acessibilidade
+        elements.contrastToggle.addEventListener('click', toggleHighContrast);
+        elements.fontIncrease.addEventListener('click', () => changeFontSize('increase'));
+        elements.fontDecrease.addEventListener('click', () => changeFontSize('decrease'));
+
+
+    </script>
+</body>
+</html>
