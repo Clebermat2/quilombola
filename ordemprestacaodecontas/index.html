@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Atividade: Organize os Documentos!</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-touch-callout: none; /* iOS Safari */
+            -webkit-user-select: none; /* Safari */
+            -khtml-user-select: none; /* Konqueror HTML */
+            -moz-user-select: none; /* Old versions of Firefox */
+            -ms-user-select: none; /* Internet Explorer/Edge */
+            user-select: none; /* Non-prefixed version, currently supported by Chrome, Edge, Opera and Firefox */
+            overflow-x: hidden; /* Prevent horizontal scroll from confetti */
+        }
+        .draggable {
+            cursor: move;
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+        .draggable.dragging {
+            opacity: 0.5;
+            transform: scale(1.05);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .dropzone.drag-over {
+            border-color: #3b82f6;
+            background-color: #eff6ff;
+        }
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            top: -20px;
+            opacity: 1;
+            animation: fall 4s linear forwards;
+            z-index: 100;
+        }
+        @keyframes fall {
+            to {
+                transform: translateY(100vh) rotate(720deg);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 flex items-center justify-center min-h-screen p-4">
+
+    <div class="bg-white rounded-2xl shadow-lg p-6 md:p-8 w-full max-w-5xl">
+        
+        <!-- Cabeçalho da Atividade -->
+        <div class="text-center mb-6">
+            <h1 class="text-2xl md:text-3xl font-bold text-slate-900">"Organize os documentos!" </h1>
+                – Reordenando a Prestação de Contas</h1>
+            <p class="text-slate-600 mt-2 max-w-3xl mx-auto">Com base na Unidade IV e na Resolução CD/FNDE nº 15/2021, arraste e solte os documentos obrigatórios na ordem correta para montar a pasta de prestação de contas da UEx.</p>
+        </div>
+
+        <!-- Área da Atividade -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
+            
+            <!-- Coluna de Documentos para Ordenar -->
+            <div class="bg-slate-50 p-4 rounded-lg">
+                <h2 class="text-lg font-semibold mb-4 text-center">Documentos Disponíveis</h2>
+                <div id="itens-container" class="space-y-3 min-h-[300px]">
+                    <!-- Itens serão inseridos pelo JavaScript -->
+                </div>
+            </div>
+
+            <!-- Coluna de Destino (Ordem Correta) -->
+            <div class="bg-slate-50 p-4 rounded-lg">
+                <h2 class="text-lg font-semibold mb-4 text-center">Pasta de Prestação de Contas (Arraste aqui)</h2>
+                <div id="dropzone-container" class="dropzone border-2 border-dashed border-slate-300 rounded-lg p-3 space-y-3 min-h-[300px]">
+                    <!-- Área para soltar os documentos -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Botão de Verificação e Feedback -->
+        <div class="mt-8 text-center">
+            <button id="check-button" class="bg-blue-600 text-white font-semibold py-3 px-8 rounded-lg shadow-md hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:bg-slate-400 disabled:cursor-not-allowed">
+                Verificar Ordem
+            </button>
+            <button id="finish-button" class="hidden bg-green-600 text-white font-semibold py-3 px-8 rounded-lg shadow-md hover:bg-green-700 transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:bg-slate-400 disabled:cursor-not-allowed">
+                Finalizar Atividade
+            </button>
+            <p id="feedback-message" class="mt-4 text-lg font-medium h-6"></p>
+        </div>
+
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const itensContainer = document.getElementById('itens-container');
+            const dropzoneContainer = document.getElementById('dropzone-container');
+            const checkButton = document.getElementById('check-button');
+            const finishButton = document.getElementById('finish-button');
+            const feedbackMessage = document.getElementById('feedback-message');
+            
+            let isCorrectState = false;
+
+            const documents = [
+                { id: 'doc2', text: 'Cópia da ata da reunião com o Conselho Escolar', color: 'bg-teal-500' },
+                { id: 'doc5', text: 'Termo de Doação dos Bens Permanentes', color: 'bg-yellow-500' },
+                { id: 'doc1', text: 'Ofício de encaminhamento da UEx para a EEx', color: 'bg-purple-500' },
+                { id: 'doc4', text: 'Notas Fiscais/Cupons e comprovantes de despesas', color: 'bg-orange-500' },
+                { id: 'doc3', text: 'Orçamentos (mínimo de 3 por item)', color: 'bg-blue-500' },
+            ];
+            
+            const correctOrder = [
+                'Ofício de encaminhamento da UEx para a EEx',
+                'Cópia da ata da reunião com o Conselho Escolar',
+                'Orçamentos (mínimo de 3 por item)',
+                'Notas Fiscais/Cupons e comprovantes de despesas',
+                'Termo de Doação dos Bens Permanentes',
+            ];
+
+            function setupActivity() {
+                documents.sort(() => Math.random() - 0.5);
+                documents.forEach(doc => {
+                    const el = document.createElement('div');
+                    el.id = doc.id;
+                    el.draggable = true;
+                    el.className = `draggable p-3 rounded-lg text-white font-medium shadow-sm ${doc.color}`;
+                    el.textContent = doc.text;
+                    itensContainer.appendChild(el);
+                });
+                addDragListeners();
+            }
+
+            function addDragListeners() {
+                const draggables = document.querySelectorAll('.draggable');
+                draggables.forEach(draggable => {
+                    draggable.addEventListener('dragstart', () => draggable.classList.add('dragging'));
+                    draggable.addEventListener('dragend', () => draggable.classList.remove('dragging'));
+                });
+            }
+            
+            function handleDragOver(e) {
+                e.preventDefault();
+                const container = e.currentTarget;
+                if (!container.classList.contains('drag-over')) {
+                    container.classList.add('drag-over');
+                }
+                const afterElement = getDragAfterElement(container, e.clientY);
+                const dragging = document.querySelector('.dragging');
+                if (dragging) {
+                     if (afterElement == null) {
+                        container.appendChild(dragging);
+                    } else {
+                        container.insertBefore(dragging, afterElement);
+                    }
+                }
+            }
+
+            function getDragAfterElement(container, y) {
+                const draggableElements = [...container.querySelectorAll('.draggable:not(.dragging)')];
+                return draggableElements.reduce((closest, child) => {
+                    const box = child.getBoundingClientRect();
+                    const offset = y - box.top - box.height / 2;
+                    if (offset < 0 && offset > closest.offset) {
+                        return { offset: offset, element: child };
+                    } else {
+                        return closest;
+                    }
+                }, { offset: Number.NEGATIVE_INFINITY }).element;
+            }
+
+            [dropzoneContainer, itensContainer].forEach(container => {
+                 container.addEventListener('dragover', handleDragOver);
+                 container.addEventListener('dragleave', () => container.classList.remove('drag-over'));
+                 container.addEventListener('drop', () => container.classList.remove('drag-over'));
+            });
+            
+            function showConfetti() {
+                const confettiContainer = document.body;
+                const colors = ['#ef4444', '#f97316', '#eab308', '#84cc16', '#22c55e', '#14b8a6', '#06b6d4', '#3b82f6', '#8b5cf6', '#d946ef'];
+                for (let i = 0; i < 150; i++) {
+                    const confetti = document.createElement('div');
+                    confetti.classList.add('confetti');
+                    confetti.style.left = Math.random() * 100 + 'vw';
+                    confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                    confetti.style.animationDelay = Math.random() * 2 + 's';
+                    const size = Math.floor(Math.random() * 8) + 8;
+                    confetti.style.width = `${size}px`;
+                    confetti.style.height = `${size}px`;
+                    if (Math.random() > 0.5) confetti.style.borderRadius = '50%';
+                    confettiContainer.appendChild(confetti);
+                    confetti.addEventListener('animationend', () => confetti.remove());
+                }
+            }
+
+            checkButton.addEventListener('click', () => {
+                const itemsInDropzone = Array.from(dropzoneContainer.children);
+                
+                if (itemsInDropzone.length !== correctOrder.length) {
+                    feedbackMessage.textContent = 'Você deve ordenar todos os documentos para concluir.';
+                    feedbackMessage.className = 'mt-4 text-lg font-medium h-6 text-yellow-600';
+                    return;
+                }
+
+                checkButton.disabled = true;
+                checkButton.classList.add('hidden');
+                finishButton.classList.remove('hidden');
+
+                const userOrder = itemsInDropzone.map(item => item.textContent);
+                isCorrectState = JSON.stringify(userOrder) === JSON.stringify(correctOrder);
+
+                document.querySelectorAll('.draggable').forEach(el => {
+                    el.draggable = false;
+                    el.style.cursor = 'default';
+                });
+                
+                if (isCorrectState) {
+                    feedbackMessage.textContent = 'Ordem Correta! Clique em finalizar para concluir.';
+                    feedbackMessage.className = 'mt-4 text-lg font-medium h-6 text-green-600';
+                } else {
+                    feedbackMessage.textContent = 'Ordem Incorreta. A sequência foi corrigida para você.';
+                    feedbackMessage.className = 'mt-4 text-lg font-medium h-6 text-red-600';
+                    
+                    const allItemsMap = new Map();
+                    document.querySelectorAll('.draggable').forEach(item => {
+                        allItemsMap.set(item.textContent, item);
+                    });
+                    dropzoneContainer.innerHTML = '';
+                    correctOrder.forEach(correctText => {
+                        const correctItem = allItemsMap.get(correctText);
+                        if (correctItem) dropzoneContainer.appendChild(correctItem);
+                    });
+                }
+            });
+
+            finishButton.addEventListener('click', () => {
+                finishButton.disabled = true;
+                if(isCorrectState) {
+                    showConfetti();
+                    feedbackMessage.textContent = 'Parabéns, atividade concluída com sucesso!';
+                    feedbackMessage.className = 'mt-4 text-lg font-medium h-6 text-green-600';
+                } else {
+                    feedbackMessage.textContent = 'Atividade concluída. Estude a ordem correta para a próxima vez!';
+                    feedbackMessage.className = 'mt-4 text-lg font-medium h-6 text-slate-700';
+                }
+            });
+
+            setupActivity();
+        });
+    </script>
+</body>
+</html>
