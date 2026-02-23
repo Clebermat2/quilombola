@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jogo 1 (Atualizado): O Percurso do PDDE</title>
+    <style>
+        :root {
+            --bg-color: #f0f8ff;
+            --text-color: #333;
+            --primary-color: #007bff;
+            --secondary-color: #6c757d;
+            --accent-color: #28a745; /* Verde */
+            --error-color: #dc3545; /* Vermelho */
+            --border-color: #dee2e6;
+            --card-bg: #ffffff;
+        }
+
+        body {
+            font-family: sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            font-size: 16px;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .high-contrast {
+            --bg-color: #000000;
+            --text-color: #ffffff;
+            --primary-color: #ffffff;
+            --secondary-color: #cccccc;
+            --accent-color: #00ff00;
+            --error-color: #ff0000;
+            --border-color: #ffffff;
+            --card-bg: #222222;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: auto;
+            background-color: var(--card-bg);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            border: 1px solid var(--border-color);
+        }
+
+        h1, h2 {
+            color: var(--primary-color);
+            text-align: center;
+        }
+
+        .accessibility-controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .accessibility-controls button {
+            padding: 10px 15px;
+            font-size: 1em;
+            cursor: pointer;
+            border: 1px solid var(--primary-color);
+            background-color: var(--primary-color);
+            color: var(--card-bg);
+            border-radius: 5px;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        
+        .accessibility-controls button:hover {
+             opacity: 0.8;
+        }
+
+        #game-board {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .step {
+            padding: 20px 10px;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            text-align: center;
+            font-weight: bold;
+            background-color: var(--secondary-color);
+            color: white;
+            transition: background-color 0.3s;
+        }
+
+        .step.active {
+            background-color: var(--accent-color);
+            border-color: var(--accent-color);
+            transform: scale(1.05);
+        }
+        
+        .step.completed {
+            background-color: #17a2b8;
+            border-color: #17a2b8;
+        }
+
+        #question-area {
+            margin-top: 25px;
+            padding: 20px;
+            border: 1px dashed var(--primary-color);
+            border-radius: 8px;
+            background-color: var(--bg-color);
+        }
+        
+        #question-text {
+            font-size: 1.1em;
+            margin-bottom: 15px;
+            min-height: 50px;
+        }
+
+        .options button {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            font-size: 1em;
+            text-align: left;
+            cursor: pointer;
+            border: 1px solid var(--border-color);
+            background-color: var(--card-bg);
+            color: var(--text-color);
+            border-radius: 5px;
+        }
+
+        .options button:hover {
+            background-color: var(--primary-color);
+            color: black;
+        }
+        
+        #feedback {
+            margin-top: 15px;
+            font-weight: bold;
+            text-align: center;
+            min-height: 40px;
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        #next-button {
+            display: none;
+            margin: 20px auto 0;
+            padding: 12px 25px;
+            font-size: 1.1em;
+            cursor: pointer;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+
+        #game-over {
+            text-align: center;
+            font-size: 1.2em;
+            color: var(--text-color);
+            display: none; /* Escondido inicialmente */
+        }
+
+        .score-box {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: var(--bg-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            display: inline-block;
+        }
+        
+        .high-contrast #next-button {
+            background-color: #00FF00 !important; /* Fundo Verde */
+            color: #ffffff !important;            /* Texto Branco */
+            border: 1px solid #ffffff;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Jogo 1: O Percurso do PDDE</h1>
+        <p style="text-align: center;">Bem-vindo! Avance por cada etapa do percurso respondendo a uma pergunta sorteada.</p>
+        <div class="accessibility-controls">
+            <button id="increase-font">Aumentar Fonte</button>
+            <button id="decrease-font">Diminuir Fonte</button>
+            <button id="toggle-contrast">Alto Contraste</button>
+        </div>
+
+        <div id="game-board">
+            <div class="step" data-step="0">1. Criação da UEx</div>
+            <div class="step" data-step="1">2. Adesão</div>
+            <div class="step" data-step="2">3. Planejamento</div>
+            <div class="step" data-step="3">4. Execução</div>
+            <div class="step" data-step="4">5. Prestação de Contas</div>
+        </div>
+
+        <div id="question-area">
+            <h2 id="question-title">Desafio da Etapa</h2>
+            <p id="question-text"></p>
+            <div class="options" id="options-container"></div>
+            <p id="feedback"></p>
+            <button id="next-button">Próxima Etapa</button>
+            
+            <div id="game-over"></div>
+        </div>
+    </div>
+
+    <script>
+        const questionPool = {
+            "Criação da UEx": [
+                {
+                    question: "Em uma escola quilombola, a criação da Unidade Executora Própria (UEx) começa com a escuta e a participação da comunidade do território. Pensando, por exemplo, em uma reunião convocada com a associação quilombola, famílias, professores/as, estudantes e lideranças locais, qual é o primeiro passo para iniciar a criação da UEx?",
+                    options: ["Registrar o CNPJ na Receita Federal.", "Convocar uma Assembleia Geral com a comunidade escolar e quilombola.", "Abrir uma conta bancária.", "Definir o presidente da UEx."],
+                    correct: 1,
+                    feedback: "O primeiro passo é a motivação e convocação de uma Assembleia Geral para discutir e aprovar o Estatuto, engajando toda a comunidade do território."
+                },
+                {
+                    question: "Após o diálogo coletivo realizado em Assembleia Geral — muitas vezes na própria escola, no salão comunitário ou na sede da associação quilombola — qual documento, aprovado pela comunidade, passa a reger o funcionamento da Unidade Executora Própria (UEx)?",
+                    options: ["O Projeto Político-Pedagógico (PPP).", "O Regimento Escolar.", "O Estatuto Social.", "A Ata de Posse da Diretoria."],
+                    correct: 2,
+                    feedback: "O Estatuto Social da Unidade Executora prevê as regras de organização, funcionamento, composição, atribuições, gestão dos recursos e prestação de contas da entidade."
+                },
+                {
+                    question: "Depois que a ata da Assembleia e o Estatuto Social da UEx foram registrados em cartório, garantindo que as decisões da comunidade estejam formalizadas, qual é o passo seguinte e obrigatório para que a UEx exista legalmente e possa receber recursos do PDDE?",
+                    options: ["A abertura da conta bancária.", "A eleição do Conselho Fiscal.", "A obtenção do CNPJ na Receita Federal.", "A comunicação à Secretaria de Educação."],
+                    correct: 2,
+                    feedback: "Sem o Cadastro Nacional da Pessoa Jurídica (CNPJ), a UEx não tem existência legal para receber recursos."
+                },
+                {
+                    question: "Na escola quilombola, o uso dos recursos públicos deve ser feito com transparência e compromisso com o território. Qual órgão da Unidade Executora Própria (UEx) é responsável por acompanhar, examinar e aprovar as contas da diretoria, garantindo o controle social dos recursos da escola?",
+                    options: ["A Assembleia Geral.", "O Conselho Deliberativo.", "O Conselho Fiscal.", "O Presidente."],
+                    correct: 2,
+                    feedback: "O Conselho Fiscal tem a função primordial de fiscalizar a gestão financeira da UEx, garantindo a transparência e o controle social da comunidade."
+                },
+                {
+                    question: "Para que a Unidade Executora Própria funcione adequadamente na escola quilombola, respeitando as normas do PDDE e fortalecendo a gestão democrática no território, quais são os cargos mínimos que devem compor a diretoria da UEx?",
+                    options: ["Presidente e Vice-Presidente.", "Presidente, Tesoureiro e Secretário-Geral.", "Diretor, Coordenador e Supervisor.", "Apenas por um Tesoureiro."],
+                    correct: 1,
+                    feedback: "A estrutura mínima da diretoria inclui Presidente, Tesoureiro e Secretário-Geral para garantir a boa administração."
+                }
+            ],
+            "Adesão": [
+                {
+                    question: "Para que uma escola quilombola possa acessar os recursos do Programa Dinheiro Direto na Escola (PDDE), conforme as normas do FNDE e em consonância com a Política Nacional de Educação Escolar Quilombola, é necessário realizar a adesão e manter os dados atualizados em um sistema oficial. Pensando, por exemplo, na organização de recursos para apoiar projetos pedagógicos ligados à história e cultura do território ou pequenas melhorias na escola da comunidade, em qual sistema essa adesão e atualização cadastral devem ser feitas?",
+                    options: ["No site da prefeitura.", "Diretamente no banco.", "No sistema PDDEWeb.", "Enviando um e-mail para o FNDE."],
+                    correct: 2,
+                    feedback: "A adesão e a atualização cadastral devem ser feitas obrigatoriamente pelo sistema PDDEWeb, disponível no site do FNDE."
+                },
+                {
+                    question: "Na escola quilombola, a gestão dos recursos do PDDE é realizada por meio da Unidade Executora Própria (UEx), fortalecendo a gestão democrática e o controle social no território. De acordo com a legislação do FNDE, quem é o responsável por realizar a adesão da escola ao PDDE no sistema PDDEWeb, garantindo que a comunidade escolar possa acessar os recursos?",
+                    options: ["O diretor da escola.", "O presidente da UEx.", "O Secretário de Educação (Municipal ou Estadual).", "Qualquer membro da comunidade escolar."],
+                    correct: 2,
+                    feedback: "A adesão no sistema PDDEWeb é de responsabilidade da Entidade Executora (EEx), representada pelo Secretário de Educação (Municipal ou Estadual)."
+                },
+                {
+                    question: "Assim como o cuidado coletivo com a escola e com o território quilombola, a atualização dos dados no PDDEWeb é uma responsabilidade permanente da UEx. Caso os dados cadastrais — como informações da diretoria, situação do CNPJ ou dados da escola — não sejam mantidos atualizados, o que pode acontecer, segundo as normas do PDDE estabelecidas pelo FNDE?",
+                    options: ["A escola recebe um bônus.", "Nada, a atualização é opcional.", "A UEx pode ficar impossibilitada de receber os recursos.", "O diretor da escola é penalizado."],
+                    correct: 2,
+                    feedback: "A falta de atualização cadastral pode bloquear os repasses financeiros e impedir a escola de receber os recursos do PDDE."
+                },
+                {
+                    question: "Considerando a legislação vigente do PDDE, que reconhece as escolas quilombolas como parte da educação básica pública, e as Diretrizes Curriculares Nacionais para a Educação Escolar Quilombola, a adesão ao programa é uma etapa necessária para o repasse de recursos financeiros. Sobre essa adesão, qual afirmativa está correta?",
+                    options: ["Sim, todas são obrigadas a participar.", "Não, a adesão é voluntária e um pré-requisito para receber os recursos.", "Sim, mas apenas para escolas rurais.", "Não, apenas escolas com mais de 100 alunos precisam aderir."],
+                    correct: 1,
+                    feedback: "A adesão ao PDDE é voluntária. Se a rede ou a escola opta por não aderir, ela simplesmente não recebe os recursos do programa."
+                },
+                {
+                    question: "Para que a Secretaria de Educação possa vincular corretamente a escola quilombola ao PDDE no sistema PDDEWeb — assegurando que os recursos cheguem à Unidade Executora Própria da escola e contribuam para o fortalecimento da educação no território — qual informação é fundamental e obrigatória no cadastro da UEx?",
+                    options: ["O nome do presidente da UEx.", "O número de alunos da escola.", "O CNPJ da Unidade Executora.", "O endereço de e-mail da escola."],
+                    correct: 2,
+                    feedback: "O CNPJ é o identificador legal ('CPF') da Unidade Executora, sendo absolutamente essencial para identificá-la no sistema e permitir o repasse dos recursos."
+                }
+            ],
+            "Planejamento": [
+                 {
+                    question: "Quem deve participar da definição de prioridades para o uso dos recursos do PDDE, visando uma gestão democrática?",
+                    options: ["Apenas o diretor e o tesoureiro da UEx.", "Apenas os professores.", "Toda a comunidade escolar (conselhos, pais, alunos, servidores, etc.).", "A Secretaria de Educação."],
+                    correct: 2,
+                    feedback: "A gestão democrática prevê que toda a comunidade escolar participe da decisão coletiva das prioridades. (Caderno 1, p. 34)"
+                },
+                {
+                    question: "O planejamento da utilização dos recursos do PDDE deve estar vinculado a qual documento essencial da escola?",
+                    options: ["Ao calendário de provas.", "Ao Projeto Político-Pedagógico (PPP).", "Ao cardápio da merenda escolar.", "Às notas do IDEB."],
+                    correct: 1,
+                    feedback: " O PPP orienta as prioridades, metas e ações pedagógicas da escola, portanto os recursos devem ser planejados de acordo com suas diretrizes."
+                },
+                {
+                    question: "Antes de iniciar a utilização dos recursos, qual ação é essencial para assegurar a transparência na gestão?",
+                    options: ["Publicar a decisão em um jornal local.", "Pedir autorização ao prefeito.", "Realizar uma reunião para definir prioridades e registrar tudo em ata.", "Guardar o dinheiro por 30 dias."],
+                    correct: 2,
+                    feedback: "A reunião com a comunidade e o registro em ata garantem que a decisão foi coletiva e transparente."
+                },
+                {
+                    question: "Ao planejar, é crucial diferenciar os recursos em duas categorias. Quais são elas?",
+                    options: ["Custeio e Capital.", "Urgente e Não Urgente.", "Manutenção e Inovação.", "Pedagógico e Administrativo."],
+                    correct: 0,
+                    feedback: "Separar o planejamento entre Custeio (bens de consumo) e Capital (bens permanentes) é obrigatório e essencial."
+                },
+                {
+                    question: "Qual a importância de realizar um diagnóstico das necessidades da escola antes de elaborar o plano de aplicação dos recursos?",
+                    options: ["Não é importante, o diretor já sabe do que precisa.", "Serve para cumprir uma exigência burocrática.", "Assegura que os recursos sejam aplicados nas necessidades mais prioritárias e significativas da escola.", "Serve para aumentar o valor do repasse no ano seguinte."],
+                    correct: 2,
+                    feedback: "O diagnóstico ajuda a comunidade a ter uma visão clara dos problemas e a aplicar os recursos de forma mais eficiente e impactante."
+                }
+            ],
+            "Execução": [
+                {
+                    question: "A compra de computadores e móveis para a escola deve ser feita com qual tipo de recurso do PDDE?",
+                    options: ["Recurso de Custeio.", "Recurso de Capital.", "Qualquer um dos dois.", "Recurso de Manutenção."],
+                    correct: 1,
+                    feedback: "Materiais permanentes como equipamentos e mobiliário são adquiridos com recursos de CAPITAL. (Caderno 1, p. 41)"
+                },
+                {
+                    question: "Qual das seguintes despesas deve ser paga com recursos de CUSTEIO?",
+                    options: ["Construção de uma nova sala de aula.", "Aquisição de uma impressora.", "Compra de cartuchos de tinta, papel e canetas.", "Pagamento de uma conta de luz da escola."],
+                    correct: 2,
+                    feedback: "Custeio é para materiais de consumo e serviços. Tinta e papel são exemplos clássicos."
+                },
+                {
+                    question: "Antes de efetuar uma compra, qual prática é recomendada para garantir o bom uso do dinheiro público?",
+                    options: ["Escolher sempre o fornecedor mais perto da escola.", "Realizar uma pesquisa de preços com, no mínimo, três fornecedores.", "Comprar sempre da mesma loja de confiança.", "Pedir indicação de um político local."],
+                    correct: 1,
+                    feedback: "A pesquisa de preços é fundamental para garantir economia e isonomia no processo de compra."
+                },
+                {
+                    question: "É permitido utilizar os recursos do PDDE para pagar salários, gratificações ou bonificações para professores e funcionários?",
+                    options: ["Sim, desde que aprovado em assembleia.", "Apenas para funcionários terceirizados.", "Não, é uma das principais vedações (proibições) do programa.", "Sim, se a escola não tiver outra fonte de recurso."],
+                    correct: 2,
+                    feedback: "O pagamento de pessoal é estritamente proibido (vedado) com recursos do PDDE."
+                },
+                 {
+                    question: "Pequenos reparos na estrutura da escola, como consertar uma infiltração ou pintar uma parede, podem ser pagos com recursos do PDDE?",
+                    options: ["Não, o PDDE não cobre gastos com infraestrutura.", "Sim, esses são considerados pequenos serviços de manutenção e podem ser pagos com recursos de custeio.", "Apenas se o valor for muito baixo.", "Apenas se for uma escola rural."],
+                    correct: 1,
+                    feedback: "A manutenção física do prédio escolar para garantir a segurança e o bem-estar dos alunos é uma despesa permitida."
+                }
+            ],
+            "Prestação de Contas": [
+                {
+                    question: "Por quanto tempo os documentos da prestação de contas (notas fiscais, orçamentos, atas) devem ser arquivados na escola?",
+                    options: ["Por 1 ano.", "Por 2 anos.", "Por, pelo menos, 5 anos.", "Até o recebimento do próximo recurso."],
+                    correct: 2,
+                    feedback: "A documentação deve ser arquivada por, no mínimo, 5 anos, à disposição dos órgãos de controle. (Caderno 1, p. 49)"
+                },
+                 {
+                    question: "Qual é um dos principais documentos que compõem a pasta de prestação de contas?",
+                    options: ["A lista de presença dos alunos.", "O Demonstrativo da Execução da Receita e da Despesa.", "O cardápio da merenda.", "O boletim de notas da escola."],
+                    correct: 1,
+                    feedback: "O Demonstrativo da Execução da Receita e da Despesa é a peça central que resume toda a movimentação financeira."
+                },
+                {
+                    question: "O que acontece se a UEx não apresenta a prestação de contas ou se ela é reprovada?",
+                    options: ["A escola recebe mais dinheiro para corrigir os erros.", "O diretor é convidado para uma reunião no FNDE.", "A UEx fica inadimplente e pode ter os repasses futuros bloqueados.", "Nada, a prestação de contas é apenas uma formalidade."],
+                    correct: 2,
+                    feedback: "A inadimplência impede a escola de receber novos recursos do PDDE e de outros programas federais."
+                },
+                {
+                    question: "Antes de ser enviada à Secretaria de Educação, a prestação de contas deve ser aprovada por quem?",
+                    options: ["Pela associação de pais e mestres.", "Pelo Conselho Fiscal da própria UEx.", "Pelo grêmio estudantil.", "Pelo prefeito da cidade."],
+                    correct: 1,
+                    feedback: "A primeira análise e aprovação devem ser feitas pelo Conselho Fiscal, que é o órgão fiscalizador interno da UEx."
+                },
+                {
+                    question: "Como a gestão escolar pode promover a transparência da prestação de contas para a comunidade?",
+                    options: ["Guardando os documentos em um cofre.", "Afixando um resumo dos gastos em um mural de fácil acesso e visibilidade na escola.", "Enviando os dados apenas para o FNDE.", "Comentando sobre os gastos apenas na sala dos professores."],
+                    correct: 1,
+                    feedback: "Dar publicidade aos gastos, por meio de murais e reuniões, é um princípio fundamental da gestão democrática e do controle social."
+                }
+            ]
+        };
+
+        let currentStageIndex = 0;
+        let fontSize = 16;
+        let scoreCorrect = 0;
+        let scoreWrong = 0;
+        const stageOrder = ["Criação da UEx", "Adesão", "Planejamento", "Execução", "Prestação de Contas"];
+
+        const body = document.body;
+        const steps = document.querySelectorAll('.step');
+        const questionArea = document.getElementById('question-area');
+        const questionTitle = document.getElementById('question-title');
+        const questionText = document.getElementById('question-text');
+        const optionsContainer = document.getElementById('options-container');
+        const feedback = document.getElementById('feedback');
+        const nextButton = document.getElementById('next-button');
+        const gameOver = document.getElementById('game-over');
+        
+        document.getElementById('increase-font').addEventListener('click', () => {
+            fontSize += 2;
+            body.style.fontSize = `${fontSize}px`;
+        });
+
+        document.getElementById('decrease-font').addEventListener('click', () => {
+            fontSize = Math.max(12, fontSize - 2);
+            body.style.fontSize = `${fontSize}px`;
+        });
+
+        document.getElementById('toggle-contrast').addEventListener('click', () => {
+            body.classList.toggle('high-contrast');
+        });
+        
+        nextButton.addEventListener('click', () => {
+            currentStageIndex++;
+            if (currentStageIndex < stageOrder.length) {
+                loadStage();
+            } else {
+                showGameOver();
+            }
+        });
+
+        function loadStage() {
+            feedback.textContent = '';
+            feedback.style.backgroundColor = 'transparent'; 
+            nextButton.style.display = 'none';
+            optionsContainer.innerHTML = '';
+            
+            steps.forEach((step, index) => {
+                step.classList.remove('active', 'completed');
+                if (index < currentStageIndex) {
+                    step.classList.add('completed');
+                } else if (index === currentStageIndex) {
+                    step.classList.add('active');
+                }
+            });
+
+            const stageName = stageOrder[currentStageIndex];
+            const questionsForStage = questionPool[stageName];
+            const randomQuestionIndex = Math.floor(Math.random() * questionsForStage.length);
+            const currentQuestion = questionsForStage[randomQuestionIndex];
+            
+            questionTitle.textContent = `Desafio: ${stageName}`;
+            questionText.textContent = currentQuestion.question;
+
+            currentQuestion.options.forEach((option, index) => {
+                const button = document.createElement('button');
+                button.textContent = option;
+                button.onclick = () => selectAnswer(index, currentQuestion.correct, currentQuestion.feedback);
+                optionsContainer.appendChild(button);
+            });
+        }
+        
+        function selectAnswer(selectedIndex, correctIndex, feedbackText) {
+            const buttons = Array.from(optionsContainer.children);
+            
+            // Desabilita todos os botões para impedir múltiplas respostas
+            buttons.forEach(button => {
+                button.disabled = true;
+            });
+
+            if (selectedIndex === correctIndex) {
+                // RESPOSTA CORRETA
+                scoreCorrect++;
+                
+                feedback.style.color = 'var(--accent-color)';
+                feedback.innerHTML = `<span style="font-size:1.2em">✔️ <strong>Sua Resposta está Correta</strong></span><br><br>${feedbackText}`;
+                
+                // Botão escolhido (correto) fica VERDE
+                buttons[selectedIndex].style.backgroundColor = 'var(--accent-color)';
+                buttons[selectedIndex].style.color = 'white';
+                
+            } else {
+                // RESPOSTA ERRADA
+                scoreWrong++;
+                
+                feedback.style.color = 'var(--error-color)';
+                feedback.innerHTML = `<span style="font-size:1.2em">❌ <strong>Sua Resposta está Errada</strong></span><br><br>${feedbackText}`;
+                
+                // Botão escolhido (errado) fica VERMELHO
+                buttons[selectedIndex].style.backgroundColor = 'var(--error-color)';
+                buttons[selectedIndex].style.color = 'white';
+
+                // Destaca também o correto para aprendizado (opcional, mas recomendado pedagogicamente)
+                // Se preferir não mostrar qual era a certa, remova as duas linhas abaixo.
+                buttons[correctIndex].style.backgroundColor = 'var(--accent-color)';
+                buttons[correctIndex].style.color = 'white';
+                buttons[correctIndex].style.opacity = '0.7'; // Leve transparência para indicar que não foi o escolhido
+            }
+            
+            nextButton.style.display = 'block';
+        }
+        
+        function showGameOver() {
+            // Oculta elementos do jogo
+            questionTitle.style.display = 'none';
+            questionText.style.display = 'none';
+            optionsContainer.style.display = 'none';
+            feedback.style.display = 'none';
+            nextButton.style.display = 'none';
+            
+            // Marca todas as etapas como completas visualmente
+            steps.forEach(step => step.classList.add('completed'));
+
+            // Exibe tela final
+            gameOver.style.display = 'block';
+            gameOver.innerHTML = `
+                <h2>Fim de Jogo!</h2>
+                <p>Você completou o Percurso do PDDE.</p>
+                <div class="score-box">
+                    <p style="color: var(--accent-color); font-size: 1.2em;"><strong>Questões Corretas: ${scoreCorrect}</strong></p>
+                    <p style="color: var(--error-color); font-size: 1.2em;"><strong>Questões Incorretas: ${scoreWrong}</strong></p>
+                </div>
+                <br><br>
+                <button onclick="location.reload()" style="padding:12px 24px; background-color: var(--primary-color); color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 1em;">Jogar Novamente</button>
+            `;
+        }
+
+        // Inicia o jogo assim que a página carrega
+        loadStage();
+    </script>
+
+</body>
+</html>
