@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Interativo PDDE</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Configuração do Tailwind para Modo Escuro -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    animation: {
+                        'fade-in': 'fadeIn 0.5s ease-out',
+                        'bounce': 'bounce 1s infinite'
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0', transform: 'translateY(10px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <style>
+        /* Estilos base adicionais se necessário */
+        body {
+            transition: background-color 0.3s ease;
+        }
+    </style>
+</head>
+<body class="min-h-screen transition-colors duration-300 bg-slate-50 flex flex-col text-slate-800 dark:text-white">
+
+    <!-- Cabeçalho -->
+    <header id="header" class="p-4 flex justify-end gap-3 shadow-sm bg-indigo-600 dark:bg-slate-800 transition-colors duration-300">
+        <button onclick="toggleTheme()" class="p-2 bg-black/20 hover:bg-black/30 text-white rounded-md transition-colors flex items-center justify-center" title="Alternar Modo Escuro">
+            <i data-lucide="moon" id="theme-icon" class="w-5 h-5"></i>
+        </button>
+        <button onclick="toggleTextSize()" class="p-2 px-3 bg-black/20 hover:bg-black/30 text-white font-bold rounded-md transition-colors flex items-center gap-1" title="Aumentar Fonte">
+            <i data-lucide="type" class="w-5 h-5"></i>
+            <span>+</span>
+        </button>
+    </header>
+
+    <!-- Conteúdo Principal -->
+    <main id="main-content" class="flex-1 flex items-center justify-center p-4 sm:p-8 text-base">
+        <!-- O conteúdo será injetado aqui via JavaScript -->
+    </main>
+
+    <script>
+        // Dados do Quiz
+        const questions = [
+            {
+                question: "Qual documento deve abrir a pasta de prestação de contas da UEx para a EEx?",
+                options: [
+                    "Cópia da ata da reunião com o Conselho Escolar",
+                    "Ofício de encaminhamento da UEx para a EEx",
+                    "Termo de Doação dos Bens Permanentes",
+                    "Orçamentos (mínimo de 3 por item)"
+                ],
+                answer: "Ofício de encaminhamento da UEx para a EEx"
+            },
+            {
+                question: "Qual documento comprova que as decisões sobre gastos foram deliberadas democraticamente?",
+                options: [
+                    "Notas fiscais/Cupons e comprovantes de despesas",
+                    "Orçamentos (mínimo de 3 por item)",
+                    "Cópia da ata da reunião com o Conselho Escolar",
+                    "Ofício de encaminhamento da UEx para a EEx"
+                ],
+                answer: "Cópia da ata da reunião com o Conselho Escolar"
+            },
+            {
+                question: "Qual documento apresenta os valores previstos para cada item antes da compra, garantindo competitividade e planejamento?",
+                options: [
+                    "Notas fiscais/Cupons e comprovantes de despesas",
+                    "Orçamentos (mínimo de 3 por item)",
+                    "Termo de Doação dos Bens Permanentes",
+                    "Cópia da ata da reunião com o Conselho Escolar"
+                ],
+                answer: "Orçamentos (mínimo de 3 por item)"
+            },
+            {
+                question: "Qual documento comprova efetivamente os gastos realizados com os recursos do PDDE?",
+                options: [
+                    "Orçamentos (mínimo de 3 por item)",
+                    "Termo de Doação dos Bens Permanentes",
+                    "Notas fiscais/Cupons e comprovantes de despesas",
+                    "Ofício de encaminhamento da UEx para a EEx"
+                ],
+                answer: "Notas fiscais/Cupons e comprovantes de despesas"
+            },
+            {
+                question: "Qual documento formaliza a doação de bens permanentes adquiridos com recursos do PDDE para a escola indígena?",
+                options: [
+                    "Notas fiscais/Cupons e comprovantes de despesas",
+                    "Termo de Doação dos Bens Permanentes",
+                    "Cópia da ata da reunião com o Conselho Escolar",
+                    "Orçamentos (mínimo de 3 por item)"
+                ],
+                answer: "Termo de Doação dos Bens Permanentes"
+            }
+        ];
+
+        // Estado da Aplicação
+        let state = {
+            hasStarted: false,
+            currentQuestion: 0,
+            score: 0,
+            showScore: false,
+            selectedOption: null,
+            isAnswered: false,
+            isDarkMode: false,
+            textSizeIndex: 0
+        };
+
+        const textSizes = ['text-base', 'text-lg', 'text-xl'];
+
+        // Funções de Acessibilidade
+        function toggleTheme() {
+            state.isDarkMode = !state.isDarkMode;
+            
+            if (state.isDarkMode) {
+                document.documentElement.classList.add('dark');
+                document.body.classList.replace('bg-slate-50', 'bg-slate-900');
+                document.getElementById('theme-icon').setAttribute('data-lucide', 'sun');
+            } else {
+                document.documentElement.classList.remove('dark');
+                document.body.classList.replace('bg-slate-900', 'bg-slate-50');
+                document.getElementById('theme-icon').setAttribute('data-lucide', 'moon');
+            }
+            lucide.createIcons();
+            render();
+        }
+
+        function toggleTextSize() {
+            const oldSize = textSizes[state.textSizeIndex];
+            state.textSizeIndex = (state.textSizeIndex + 1) % textSizes.length;
+            const newSize = textSizes[state.textSizeIndex];
+            
+            const mainContent = document.getElementById('main-content');
+            mainContent.classList.remove(oldSize);
+            mainContent.classList.add(newSize);
+            render();
+        }
+
+        // Ações do Quiz
+        function startGame() {
+            state.hasStarted = true;
+            render();
+        }
+
+        function selectOption(optionIndex) {
+            if (state.isAnswered) return;
+            
+            const selectedOpt = questions[state.currentQuestion].options[optionIndex];
+            state.selectedOption = selectedOpt;
+            state.isAnswered = true;
+
+            if (selectedOpt === questions[state.currentQuestion].answer) {
+                state.score += 1;
+            }
+            render();
+        }
+
+        function nextQuestion() {
+            const next = state.currentQuestion + 1;
+            if (next < questions.length) {
+                state.currentQuestion = next;
+                state.selectedOption = null;
+                state.isAnswered = false;
+            } else {
+                state.showScore = true;
+            }
+            render();
+        }
+
+        function restartQuiz() {
+            state.hasStarted = false;
+            state.currentQuestion = 0;
+            state.score = 0;
+            state.showScore = false;
+            state.selectedOption = null;
+            state.isAnswered = false;
+            render();
+        }
+
+        // Sistema de Renderização
+        function render() {
+            const mainContent = document.getElementById('main-content');
+            let html = '';
+
+            const containerClasses = "max-w-3xl w-full p-6 sm:p-10 rounded-2xl shadow-xl transition-all duration-300 dark:bg-slate-800 dark:text-white bg-white text-slate-800";
+
+            if (!state.hasStarted) {
+                // Tela Inicial
+                html = `
+                    <div class="${containerClasses} p-8 sm:p-12 text-center">
+                        <div class="flex justify-center mb-8">
+                            <div class="p-6 rounded-full dark:bg-indigo-900/50 dark:text-indigo-400 bg-indigo-100 text-indigo-600">
+                                <i data-lucide="folder-open" class="w-20 h-20"></i>
+                            </div>
+                        </div>
+                        <h1 class="text-3xl sm:text-5xl font-extrabold mb-6 leading-tight">
+                            "Organize os documentos!"
+                            <span class="text-indigo-500 text-2xl sm:text-3xl font-bold mt-4 block">
+                                Prestação de Contas para Escolas Indígenas
+                            </span>
+                        </h1>
+                        <p class="mb-10 opacity-80 leading-relaxed max-w-2xl mx-auto">
+                            O gestor da escola indígena precisa montar corretamente a pasta de prestação de contas da UEx, garantindo que todos os documentos estejam organizados de acordo com a Resolução CD/FNDE nº 15/2021, que regula a aplicação e fiscalização dos recursos do PDDE.
+                        </p>
+                        <button onclick="startGame()" class="inline-flex items-center gap-3 px-8 py-4 bg-indigo-600 hover:bg-indigo-700 text-white text-xl font-bold rounded-xl transition-all hover:scale-105 shadow-lg hover:shadow-indigo-500/30">
+                            <i data-lucide="play" class="w-6 h-6 fill-current"></i>
+                            Iniciar Atividade
+                        </button>
+                    </div>
+                `;
+            } else if (state.showScore) {
+                // Tela de Resultados
+                const isPerfectScore = state.score === questions.length;
+                
+                html = `
+                    <div class="${containerClasses} max-w-2xl mx-auto text-center p-8">
+                        ${isPerfectScore 
+                            ? '<i data-lucide="award" class="w-20 h-20 mx-auto mb-4 text-yellow-500 animate-bounce"></i>' 
+                            : '<i data-lucide="x-circle" class="w-16 h-16 mx-auto mb-4 text-slate-400"></i>'
+                        }
+                        
+                        <h2 class="text-3xl font-bold mb-2">
+                            ${isPerfectScore ? 'Parabéns! Atividade Concluída!' : 'Atividade Concluída!'}
+                        </h2>
+                        <p class="text-xl mb-8">
+                            Acertou <span class="font-bold text-indigo-500">${state.score}</span> de <span class="font-bold">${questions.length}</span> perguntas.
+                        </p>
+
+                        ${isPerfectScore ? `
+                            <div class="mt-8 p-6 rounded-xl border-2 text-left flex flex-col md:flex-row items-center gap-6 dark:border-yellow-600/30 dark:bg-yellow-900/10 border-yellow-200 bg-yellow-50">
+                                <div class="relative shrink-0 w-32 h-32 flex items-center justify-center bg-gradient-to-br from-blue-900 to-blue-700 rounded-full border-4 border-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.5)]">
+                                    <div class="absolute inset-0 border-2 border-yellow-300 rounded-full m-1 border-dashed opacity-50"></div>
+                                    <i data-lucide="scroll-text" class="w-12 h-12 text-yellow-100 drop-shadow-md z-10"></i>
+                                    <svg class="absolute w-full h-full text-yellow-500 opacity-80" viewBox="0 0 100 100">
+                                        <path d="M 15 50 Q 15 20 50 10 Q 85 20 85 50" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="4 4" />
+                                        <path d="M 15 50 Q 15 80 50 90 Q 85 80 85 50" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="4 4" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h3 class="text-lg font-bold flex items-center gap-2 mb-2">
+                                        <span>🏅</span> Badge Final do Nível: "Líder Comunitário"
+                                    </h3>
+                                    <p class="leading-relaxed opacity-90">
+                                        Ao concluir o curso, o gestor recebe o <strong>badge supremo</strong> e o <strong>Certificado de Conclusão</strong>, simbolizando a capacidade de gerenciar recursos do PDDE com transparência e fortalecer a participação da comunidade na gestão escolar.
+                                    </p>
+                                </div>
+                            </div>
+                        ` : `
+                            <div class="mt-8 p-8 rounded-xl border-2 flex flex-col items-center justify-center dark:border-slate-600 dark:bg-slate-700/30 border-slate-200 bg-slate-50">
+                                <h3 class="text-2xl font-bold text-indigo-500 mb-3">Tente Novamente!</h3>
+                                <p class="opacity-80">
+                                    Precisa de acertar todas as questões para desbloquear o <strong>Badge Supremo "Líder Comunitário"</strong>.
+                                </p>
+                            </div>
+                        `}
+
+                        <button onclick="restartQuiz()" class="mt-10 inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg transition-colors">
+                            <i data-lucide="rotate-ccw" class="w-5 h-5"></i>
+                            ${isPerfectScore ? 'Refazer Atividade' : 'Tentar Novamente'}
+                        </button>
+                    </div>
+                `;
+            } else {
+                // Tela do Quiz
+                const currentQ = questions[state.currentQuestion];
+                const progress = ((state.currentQuestion + 1) / questions.length) * 100;
+
+                let optionsHtml = currentQ.options.map((option, index) => {
+                    const isCorrect = option === currentQ.answer;
+                    const isSelected = option === state.selectedOption;
+                    
+                    let btnClass = "w-full text-left p-4 rounded-xl border-2 transition-all duration-200 flex items-center justify-between group ";
+                    let iconHtml = "";
+
+                    if (!state.isAnswered) {
+                        btnClass += "dark:border-slate-600 dark:hover:border-indigo-400 dark:hover:bg-slate-700 border-slate-200 hover:border-indigo-500 hover:bg-indigo-50 cursor-pointer";
+                    } else {
+                        btnClass += " cursor-default";
+                        if (isCorrect) {
+                            btnClass += " dark:border-emerald-500 dark:bg-emerald-900/30 dark:text-emerald-100 border-emerald-500 bg-emerald-50 text-emerald-900";
+                            iconHtml = '<i data-lucide="check-circle-2" class="w-6 h-6 text-emerald-500 shrink-0"></i>';
+                        } else if (isSelected && !isCorrect) {
+                            btnClass += " dark:border-red-500 dark:bg-red-900/30 dark:text-red-100 border-red-500 bg-red-50 text-red-900";
+                            iconHtml = '<i data-lucide="x-circle" class="w-6 h-6 text-red-500 shrink-0"></i>';
+                        } else {
+                            btnClass += " dark:border-slate-700 dark:opacity-50 border-slate-200 opacity-50";
+                        }
+                    }
+
+                    return `
+                        <button ${state.isAnswered ? 'disabled' : ''} onclick="selectOption(${index})" class="${btnClass}">
+                            <span class="flex-1 pr-4">${option}</span>
+                            ${iconHtml}
+                        </button>
+                    `;
+                }).join('');
+
+                html = `
+                    <div class="${containerClasses}">
+                        <!-- Indicador de Progresso -->
+                        <div class="mb-8">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-sm font-semibold text-indigo-500 uppercase tracking-wider">
+                                    Questão ${state.currentQuestion + 1} de ${questions.length}
+                                </span>
+                                <span class="text-sm font-medium opacity-60">
+                                    Pontuação: ${state.score}
+                                </span>
+                            </div>
+                            <div class="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2.5">
+                                <div class="bg-indigo-600 h-2.5 rounded-full transition-all duration-500" style="width: ${progress}%"></div>
+                            </div>
+                        </div>
+
+                        <!-- Pergunta -->
+                        <h2 class="text-2xl sm:text-3xl font-bold mb-8 leading-tight">
+                            ${currentQ.question}
+                        </h2>
+
+                        <!-- Opções de Resposta -->
+                        <div class="space-y-4">
+                            ${optionsHtml}
+                        </div>
+
+                        <!-- Botão Próxima -->
+                        ${state.isAnswered ? `
+                            <div class="mt-8 flex justify-end animate-fade-in">
+                                <button onclick="nextQuestion()" class="flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg transition-colors shadow-md">
+                                    ${state.currentQuestion === questions.length - 1 ? 'Ver Resultado' : 'Próxima Pergunta'}
+                                    <i data-lucide="arrow-right" class="w-5 h-5"></i>
+                                </button>
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            }
+
+            mainContent.innerHTML = html;
+            
+            // Re-inicializa os ícones após atualizar o DOM
+            lucide.createIcons();
+        }
+
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', () => {
+            render();
+        });
+    </script>
+</body>
+</html>
