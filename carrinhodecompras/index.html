@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carrinho de Compras Inteligente - PDDE</title>
+    <style>
+        /* --- Variáveis de Tema (Claro / Escuro) --- */
+        :root {
+            --bg-body: #f4f7f9;
+            --bg-card: #ffffff;
+            --text-main: #333333;
+            --text-muted: #666666;
+            --border-color: #e0e0e0;
+            
+            --primary: #5a4fcf;
+            --primary-hover: #4a3ebf;
+            
+            --custeio-color: #0d6efd;
+            --custeio-bg: #e7f1ff;
+            
+            --capital-color: #198754;
+            --capital-bg: #d1e7dd;
+            
+            --error-color: #dc3545;
+            --success-color: #198754;
+
+            --font-size-base: 16px;
+        }
+
+        [data-theme="dark"] {
+            --bg-body: #121212;
+            --bg-card: #1e1e1e;
+            --text-main: #e0e0e0;
+            --text-muted: #a0a0a0;
+            --border-color: #333333;
+            
+            --primary: #7b72e9;
+            --custeio-color: #6ea8fe;
+            --custeio-bg: rgba(13, 110, 253, 0.1);
+            
+            --capital-color: #75b798;
+            --capital-bg: rgba(25, 135, 84, 0.1);
+        }
+
+        /* --- Estilos Globais --- */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        body {
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            font-size: var(--font-size-base);
+            padding-bottom: 40px;
+        }
+
+        /* Foco para acessibilidade */
+        *:focus {
+            outline: 3px solid var(--primary);
+            outline-offset: 2px;
+        }
+
+        /* --- Acessibilidade Top Bar --- */
+        .a11y-bar {
+            display: flex;
+            justify-content: flex-end;
+            padding: 10px 20px;
+            gap: 10px;
+            background-color: var(--primary);
+        }
+
+        .a11y-btn {
+            background-color: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid transparent;
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .a11y-btn:hover {
+            background-color: rgba(255, 255, 255, 0.3);
+        }
+
+        /* --- Header --- */
+        header {
+            text-align: center;
+            padding: 30px 20px 20px;
+        }
+
+        header h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            color: var(--text-main);
+        }
+
+        header p {
+            color: var(--text-muted);
+            max-width: 800px;
+            margin: 0 auto;
+            line-height: 1.5;
+        }
+
+        /* --- Orçamentos (Budgets) --- */
+        .budgets-container {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            padding: 0 20px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .budget-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        .budget-custeio h2 { color: var(--custeio-color); font-size: 1rem; text-transform: uppercase; margin-bottom: 10px;}
+        .budget-capital h2 { color: var(--capital-color); font-size: 1rem; text-transform: uppercase; margin-bottom: 10px;}
+
+        .budget-value {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: var(--text-main);
+        }
+
+        .budget-desc {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        /* --- Área Principal do Jogo --- */
+        .game-board {
+            display: grid;
+            grid-template-columns: 350px 1fr 1fr;
+            gap: 20px;
+            padding: 0 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        @media (max-width: 992px) {
+            .game-board {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* --- Lista de Necessidades --- */
+        .needs-panel {
+            background-color: var(--bg-card);
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            height: 600px;
+        }
+
+        .needs-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .btn-reset {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .btn-reset:hover { background-color: var(--primary-hover); }
+
+        .items-list {
+            padding: 15px;
+            overflow-y: auto;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .item-card {
+            display: flex;
+            align-items: center;
+            background-color: var(--bg-body);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 10px;
+            cursor: grab;
+            user-select: none;
+        }
+
+        .item-card:active { cursor: grabbing; }
+        
+        /* Acessibilidade visual para indicar que é clicável via teclado */
+        .item-card:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(90, 79, 207, 0.3);
+        }
+
+        .item-label-box {
+            background-color: #c4c4c4;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-right: 15px;
+            flex-shrink: 0;
+            color: #333;
+            text-align: center;
+            padding: 4px;
+            line-height: 1.2;
+            word-break: break-word;
+        }
+
+        .item-info { flex: 1; }
+        .item-name { font-weight: bold; font-size: 0.95rem; margin-bottom: 4px; }
+        .item-price { color: var(--text-muted); font-size: 0.85rem; }
+
+        /* --- Carrinhos (Drop Zones) --- */
+        .cart-zone {
+            background-color: var(--bg-card);
+            border: 2px dashed var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: background-color 0.2s, border-color 0.2s;
+        }
+
+        .cart-zone.drag-over-custeio {
+            background-color: var(--custeio-bg);
+            border-color: var(--custeio-color);
+            border-style: solid;
+        }
+
+        .cart-zone.drag-over-capital {
+            background-color: var(--capital-bg);
+            border-color: var(--capital-color);
+            border-style: solid;
+        }
+
+        .cart-header {
+            text-align: center;
+            margin-bottom: 20px;
+            width: 100%;
+        }
+        
+        .cart-custeio h3 { color: var(--custeio-color); }
+        .cart-capital h3 { color: var(--capital-color); }
+
+        .cart-header p {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-top: 5px;
+        }
+
+        .dropped-items-container {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            min-height: 200px;
+        }
+
+        /* --- Modais (Feedbacks e Acessibilidade) --- */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(0,0,0,0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .modal-box {
+            background-color: var(--bg-card);
+            padding: 30px;
+            border-radius: 12px;
+            max-width: 500px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            transform: translateY(-20px);
+            transition: transform 0.3s;
+        }
+
+        .modal-overlay.active .modal-box {
+            transform: translateY(0);
+        }
+
+        .modal-title { font-size: 1.5rem; margin-bottom: 15px; }
+        .modal-title.error { color: var(--error-color); }
+        .modal-title.success { color: var(--success-color); }
+        
+        .modal-message { margin-bottom: 25px; line-height: 1.5; color: var(--text-main); }
+
+        .modal-btn {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1rem;
+        }
+
+        /* Modal Acessibilidade Teclado */
+        .keyboard-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        
+        .btn-action-custeio { background-color: var(--custeio-color); color: white; border: none; padding: 10px; border-radius: 6px; cursor:pointer;}
+        .btn-action-capital { background-color: var(--capital-color); color: white; border: none; padding: 10px; border-radius: 6px; cursor:pointer;}
+
+        /* Badge final */
+        .badge-icon {
+            font-size: 4rem;
+            margin-bottom: 10px;
+        }
+        
+        .screen-reader-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            border: 0;
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- Acessibilidade -->
+    <div class="a11y-bar">
+        <button class="a11y-btn" id="btn-theme" aria-label="Alternar modo escuro ou claro" title="Alto Contraste / Modo Escuro">🌙</button>
+        <button class="a11y-btn" id="btn-font-decrease" aria-label="Diminuir tamanho da fonte" title="Diminuir Fonte">A-</button>
+        <button class="a11y-btn" id="btn-font-increase" aria-label="Aumentar tamanho da fonte" title="Aumentar Fonte">A+</button>
+    </div>
+
+    <header>
+        <h1>Carrinho de Compras Inteligente</h1>
+        <p>Arraste os itens da lista de necessidades para os carrinhos corretos (Custeio ou Capital) sem estourar os orçamentos, com base nas regras do PDDE.</p>
+        <p class="screen-reader-only">Usuários de teclado: Navegue até um item com a tecla Tab e pressione Enter para escolher o destino do item.</p>
+    </header>
+
+    <!-- Região Viva para Leitores de Tela (atualizações de saldo) -->
+    <div aria-live="polite" class="screen-reader-only" id="sr-announcer"></div>
+
+    <div class="budgets-container">
+        <div class="budget-card budget-custeio">
+            <h2>Orçamento de Custeio</h2>
+            <div class="budget-value" id="display-custeio">R$ 2.000,00</div>
+            <div class="budget-desc">Para material de consumo e serviços.</div>
+        </div>
+        <div class="budget-card budget-capital">
+            <h2>Orçamento de Capital</h2>
+            <div class="budget-value" id="display-capital">R$ 3.000,00</div>
+            <div class="budget-desc">Para equipamentos e material permanente.</div>
+        </div>
+    </div>
+
+    <main class="game-board">
+        <!-- Painel Esquerdo -->
+        <section class="needs-panel">
+            <div class="needs-header">
+                <h3>Lista de Necessidades</h3>
+                <button class="btn-reset" onclick="initGame()" aria-label="Reiniciar o jogo">Reiniciar</button>
+            </div>
+            <div class="items-list" id="items-list" role="list" aria-label="Itens disponíveis para compra">
+                <!-- Itens gerados via JS -->
+            </div>
+        </section>
+
+        <!-- Carrinho Custeio -->
+        <section class="cart-zone cart-custeio" id="zone-custeio" data-type="custeio" aria-label="Carrinho de Custeio">
+            <div class="cart-header">
+                <h3>🛒 Carrinho de Custeio</h3>
+                <p>Arraste itens de custeio para cá.</p>
+            </div>
+            <div class="dropped-items-container" id="container-custeio"></div>
+        </section>
+
+        <!-- Carrinho Capital -->
+        <section class="cart-zone cart-capital" id="zone-capital" data-type="capital" aria-label="Carrinho de Capital">
+            <div class="cart-header">
+                <h3>💰 Carrinho de Capital</h3>
+                <p>Arraste itens de capital para cá.</p>
+            </div>
+            <div class="dropped-items-container" id="container-capital"></div>
+        </section>
+    </main>
+
+    <!-- Modal Genérico para Feedbacks -->
+    <div class="modal-overlay" id="modal-feedback" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+        <div class="modal-box">
+            <h2 class="modal-title" id="modal-title">Aviso</h2>
+            <p class="modal-message" id="modal-msg"></p>
+            <button class="modal-btn" onclick="closeModal('modal-feedback')" id="btn-close-feedback">Entendi</button>
+        </div>
+    </div>
+
+    <!-- Modal Acessibilidade Teclado -->
+    <div class="modal-overlay" id="modal-keyboard" role="dialog" aria-modal="true" aria-labelledby="modal-kbd-title">
+        <div class="modal-box">
+            <h2 class="modal-title" id="modal-kbd-title">Mover Item</h2>
+            <p class="modal-message">Para qual orçamento deseja alocar: <strong id="kbd-item-name"></strong>?</p>
+            <div class="keyboard-actions">
+                <button class="btn-action-custeio" id="btn-move-custeio">Carrinho de Custeio</button>
+                <button class="btn-action-capital" id="btn-move-capital">Carrinho de Capital</button>
+            </div>
+            <button class="modal-btn" onclick="closeModal('modal-keyboard')">Cancelar</button>
+        </div>
+    </div>
+
+    <!-- Modal Vitória -->
+    <div class="modal-overlay" id="modal-win" role="dialog" aria-modal="true" aria-labelledby="modal-win-title">
+        <div class="modal-box">
+            <div class="badge-icon">🏅</div>
+            <h2 class="modal-title success" id="modal-win-title">Badge: "Mestre das Compras"</h2>
+            <p class="modal-message">Parabéns! Você otimizou o uso dos recursos e adquiriu o máximo de necessidades possíveis sem estourar os orçamentos. Você garantiu uma gestão financeira eficiente!</p>
+            <button class="modal-btn" onclick="initGame()">Jogar Novamente</button>
+        </div>
+    </div>
+
+    <script>
+        /* --- Configurações e Dados Iniciais --- */
+        const orcamentoInicialCusteio = 2000;
+        const orcamentoInicialCapital = 3000;
+
+        let saldoCusteio = orcamentoInicialCusteio;
+        let saldoCapital = orcamentoInicialCapital;
+        let itensComprados = 0;
+
+        // Base de dados dos itens baseada nas capturas de tela
+        const itemsDatabase = [
+            { id: "item-1", name: "Bebedouro Industrial", price: 1200, type: "capital", label: "Água" },
+            { id: "item-2", name: "Formação de Professores (Workshop)", price: 600, type: "custeio", label: "Curso" },
+            { id: "item-3", name: "Material de Expediente Completo", price: 200, type: "custeio", label: "Papelaria" },
+            { id: "item-4", name: "Kit de Robótica Educacional (Base)", price: 1500, type: "capital", label: "Robô" },
+            { id: "item-5", name: "Kit Multimídia (Projetor + Tela)", price: 1800, type: "capital", label: "Projetor" },
+            { id: "item-6", name: "Assinatura Plataforma Digital Educativa", price: 500, type: "custeio", label: "Digital" },
+            { id: "item-7", name: "Instrumentos Musicais (Kit Percussão)", price: 900, type: "capital", label: "Música" },
+            { id: "item-8", name: "Caixa de Som Amplificada", price: 600, type: "capital", label: "Som" },
+            { id: "item-9", name: "Pequeno Reparo Elétrico", price: 300, type: "custeio", label: "Reparo" },
+            { id: "item-10", name: "Tintas para Pintura de Sala de Aula", price: 400, type: "custeio", label: "Pintura" },
+            { id: "item-11", name: "Recarga de Extintores de Incêndio", price: 150, type: "custeio", label: "Segurança" },
+            { id: "item-12", name: "Mobiliário Infantil (5 conjuntos)", price: 1500, type: "capital", label: "Mesas" },
+            { id: "item-13", name: "Microscópio para Laboratório", price: 700, type: "capital", label: "Microscópio" },
+            { id: "item-14", name: "Kit para Projeto de Ciências (Consumíveis)", price: 250, type: "custeio", label: "Ciência" },
+            { id: "item-15", name: "Computador para Secretaria", price: 2200, type: "capital", label: "PC" },
+            { id: "item-16", name: "Ábacos e Material Dourado (conjunto)", price: 400, type: "capital", label: "Pedagógico" },
+            { id: "item-17", name: "Insumos para Cozinha (Gás, etc)", price: 250, type: "custeio", label: "Cozinha" },
+            { id: "item-18", name: "Estante de Aço para Biblioteca", price: 800, type: "capital", label: "Estante" },
+            { id: "item-19", name: "Material de Limpeza e Higiene", price: 300, type: "custeio", label: "Limpeza" },
+            { id: "item-20", name: "Serviços Gráficos (Impressão de Apostilas)", price: 350, type: "custeio", label: "Gráfica" }
+        ];
+
+        let currentItems = [];
+        let activeKeyboardItem = null;
+
+        /* --- Utilitários --- */
+        const formatMoney = (value) => {
+            return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+        };
+
+        const updateSR = (text) => {
+            document.getElementById('sr-announcer').textContent = text;
+        };
+
+        /* --- Inicialização do Jogo --- */
+        function initGame() {
+            saldoCusteio = orcamentoInicialCusteio;
+            saldoCapital = orcamentoInicialCapital;
+            itensComprados = 0;
+            currentItems = JSON.parse(JSON.stringify(itemsDatabase)); // Clone
+            
+            updateBudgetsDisplay();
+            renderItemsList();
+            
+            // Limpa carrinhos
+            document.getElementById('container-custeio').innerHTML = '';
+            document.getElementById('container-capital').innerHTML = '';
+            
+            closeModal('modal-win');
+            updateSR("O jogo foi reiniciado. Orçamentos restaurados.");
+        }
+
+        function updateBudgetsDisplay() {
+            document.getElementById('display-custeio').textContent = formatMoney(saldoCusteio);
+            document.getElementById('display-capital').textContent = formatMoney(saldoCapital);
+        }
+
+        function renderItemsList() {
+            const listEl = document.getElementById('items-list');
+            listEl.innerHTML = '';
+
+            currentItems.forEach(item => {
+                const el = document.createElement('div');
+                el.className = 'item-card';
+                el.draggable = true;
+                el.id = item.id;
+                el.setAttribute('role', 'listitem');
+                el.setAttribute('tabindex', '0'); // Torna focável pelo teclado
+                el.setAttribute('aria-label', `${item.name}. Valor: ${formatMoney(item.price)}. Pressione Enter para mover.`);
+                
+                el.innerHTML = `
+                    <div class="item-label-box" aria-hidden="true">${item.label}</div>
+                    <div class="item-info">
+                        <div class="item-name">${item.name}</div>
+                        <div class="item-price">${formatMoney(item.price)}</div>
+                    </div>
+                `;
+
+                // Eventos de Drag and Drop
+                el.addEventListener('dragstart', handleDragStart);
+                el.addEventListener('dragend', handleDragEnd);
+
+                // Evento de Teclado (Acessibilidade)
+                el.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        openKeyboardModal(item);
+                    }
+                });
+
+                listEl.appendChild(el);
+            });
+        }
+
+        /* --- Lógica de Validação e Movimentação --- */
+        function attemptMove(itemObj, targetType) {
+            // 1. Validar Categoria
+            if (itemObj.type !== targetType) {
+                const tipoCorreto = itemObj.type === 'custeio' ? 'Custeio (curta duração/consumo)' : 'Capital (bens duráveis/equipamentos)';
+                const msg = `Erro de Categoria: O item "${itemObj.name}" é classificado como despesa de ${tipoCorreto}. Você tentou colocá-lo em ${targetType === 'custeio' ? 'Custeio' : 'Capital'}.`;
+                showModal('modal-feedback', 'Erro na Classificação', msg, 'error');
+                return false;
+            }
+
+            // 2. Validar Orçamento
+            if (targetType === 'custeio') {
+                if (saldoCusteio < itemObj.price) {
+                    showModal('modal-feedback', 'Orçamento Estourado', `Você não possui saldo suficiente de Custeio para adquirir "${itemObj.name}".`, 'error');
+                    return false;
+                }
+                saldoCusteio -= itemObj.price;
+            } else {
+                if (saldoCapital < itemObj.price) {
+                    showModal('modal-feedback', 'Orçamento Estourado', `Você não possui saldo suficiente de Capital para adquirir "${itemObj.name}".`, 'error');
+                    return false;
+                }
+                saldoCapital -= itemObj.price;
+            }
+
+            // Sucesso
+            return true;
+        }
+
+        function finalizeMove(itemId, targetType) {
+            const itemEl = document.getElementById(itemId);
+            const container = document.getElementById(`container-${targetType}`);
+            
+            // Remove da lista lógica e visual
+            const itemIndex = currentItems.findIndex(i => i.id === itemId);
+            const itemObj = currentItems[itemIndex];
+            currentItems.splice(itemIndex, 1);
+
+            // Estiliza para ficar inativo/comprado no carrinho
+            itemEl.draggable = false;
+            itemEl.removeAttribute('tabindex');
+            itemEl.style.backgroundColor = 'transparent';
+            itemEl.style.border = '1px solid #ccc';
+            
+            container.appendChild(itemEl);
+            updateBudgetsDisplay();
+            
+            itensComprados++;
+            updateSR(`Item ${itemObj.name} comprado com sucesso. Novo saldo de ${targetType} é ${formatMoney(targetType === 'custeio' ? saldoCusteio : saldoCapital)}.`);
+
+            checkWinCondition();
+        }
+
+        function checkWinCondition() {
+            // Verifica se o usuário ainda tem saldo para comprar pelo menos 1 dos itens restantes
+            const podeComprarMais = currentItems.some(item => {
+                if (item.type === 'custeio') return saldoCusteio >= item.price;
+                if (item.type === 'capital') return saldoCapital >= item.price;
+                return false;
+            });
+
+            if (!podeComprarMais) {
+                setTimeout(() => {
+                    const modalWin = document.getElementById('modal-win');
+                    modalWin.classList.add('active');
+                    updateSR("Parabéns! Você ganhou o badge Mestre das Compras. Você utilizou o orçamento de forma eficiente.");
+                    document.getElementById('modal-win-title').focus();
+                }, 500);
+            }
+        }
+
+        /* --- Eventos de Drag & Drop --- */
+        let draggedItemId = null;
+
+        function handleDragStart(e) {
+            draggedItemId = e.target.id;
+            e.dataTransfer.effectAllowed = 'move';
+            // Necessário para o Firefox
+            e.dataTransfer.setData('text/plain', e.target.id);
+            setTimeout(() => e.target.style.opacity = '0.5', 0);
+        }
+
+        function handleDragEnd(e) {
+            e.target.style.opacity = '1';
+            draggedItemId = null;
+            document.querySelectorAll('.cart-zone').forEach(z => {
+                z.classList.remove('drag-over-custeio', 'drag-over-capital');
+            });
+        }
+
+        const dropZones = document.querySelectorAll('.cart-zone');
+        
+        dropZones.forEach(zone => {
+            zone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+                const type = zone.getAttribute('data-type');
+                zone.classList.add(`drag-over-${type}`);
+            });
+
+            zone.addEventListener('dragleave', (e) => {
+                const type = zone.getAttribute('data-type');
+                zone.classList.remove(`drag-over-${type}`);
+            });
+
+            zone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                const type = zone.getAttribute('data-type');
+                zone.classList.remove(`drag-over-${type}`);
+                
+                if (draggedItemId) {
+                    const itemObj = currentItems.find(i => i.id === draggedItemId);
+                    if (itemObj) {
+                        if (attemptMove(itemObj, type)) {
+                            finalizeMove(draggedItemId, type);
+                        }
+                    }
+                }
+            });
+        });
+
+        /* --- Interface Modal Genérica --- */
+        function showModal(modalId, title, message, type) {
+            const modal = document.getElementById(modalId);
+            const titleEl = modal.querySelector('.modal-title');
+            const msgEl = modal.querySelector('.modal-message');
+            
+            titleEl.textContent = title;
+            titleEl.className = 'modal-title ' + type;
+            msgEl.textContent = message;
+            
+            modal.classList.add('active');
+            updateSR(`Aviso: ${title}. ${message}`);
+            
+            // Foco para acessibilidade
+            setTimeout(() => {
+                modal.querySelector('.modal-btn').focus();
+            }, 100);
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        /* --- Acessibilidade: Movimentação por Teclado --- */
+        function openKeyboardModal(item) {
+            activeKeyboardItem = item;
+            document.getElementById('kbd-item-name').textContent = item.name;
+            const modal = document.getElementById('modal-keyboard');
+            modal.classList.add('active');
+            updateSR(`Para qual orçamento deseja alocar ${item.name}?`);
+            setTimeout(() => document.getElementById('btn-move-custeio').focus(), 100);
+        }
+
+        document.getElementById('btn-move-custeio').addEventListener('click', () => {
+            if (activeKeyboardItem && attemptMove(activeKeyboardItem, 'custeio')) {
+                finalizeMove(activeKeyboardItem.id, 'custeio');
+                closeModal('modal-keyboard');
+            }
+        });
+
+        document.getElementById('btn-move-capital').addEventListener('click', () => {
+            if (activeKeyboardItem && attemptMove(activeKeyboardItem, 'capital')) {
+                finalizeMove(activeKeyboardItem.id, 'capital');
+                closeModal('modal-keyboard');
+            }
+        });
+
+        /* --- Acessibilidade Visual (Tema e Fonte) --- */
+        let fontSizeMultiplier = 1;
+
+        document.getElementById('btn-theme').addEventListener('click', () => {
+            const body = document.documentElement;
+            if (body.getAttribute('data-theme') === 'dark') {
+                body.removeAttribute('data-theme');
+                document.getElementById('btn-theme').textContent = '🌙';
+            } else {
+                body.setAttribute('data-theme', 'dark');
+                document.getElementById('btn-theme').textContent = '☀️';
+            }
+        });
+
+        document.getElementById('btn-font-increase').addEventListener('click', () => {
+            if (fontSizeMultiplier < 1.4) {
+                fontSizeMultiplier += 0.1;
+                document.documentElement.style.setProperty('--font-size-base', `${16 * fontSizeMultiplier}px`);
+            }
+        });
+
+        document.getElementById('btn-font-decrease').addEventListener('click', () => {
+            if (fontSizeMultiplier > 0.8) {
+                fontSizeMultiplier -= 0.1;
+                document.documentElement.style.setProperty('--font-size-base', `${16 * fontSizeMultiplier}px`);
+            }
+        });
+
+        // Iniciar jogo ao carregar
+        window.onload = initGame;
+
+    </script>
+</body>
+</html>
