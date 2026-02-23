@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Quebra-Cabeça PDDE</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background-color: #f0fdf4;
+            touch-action: none; /* Previne scroll ao arrastar no mobile */
+            overflow: hidden;
+        }
+        #gameCanvas {
+            max-width: 100%;
+            height: auto;
+            background-color: #ffffff;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            border-radius: 12px;
+            cursor: grab;
+        }
+        #gameCanvas:active {
+            cursor: grabbing;
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-center min-h-screen text-gray-800 font-sans">
+
+    <div class="mb-4 text-center">
+        <h1 class="text-3xl font-bold text-green-700 mb-2">Quebra-Cabeça PDDE</h1>
+        <p class="text-sm text-gray-600">Arraste as peças da direita para o quadro à esquerda para montar.</p>
+    </div>
+
+    <div class="relative w-full max-w-5xl px-4 flex justify-center">
+        <canvas id="gameCanvas" width="1000" height="600"></canvas>
+        
+        <!-- Modal de Vitória -->
+        <div id="winModal" class="hidden absolute inset-0 flex items-center justify-center bg-white/80 backdrop-blur-sm rounded-xl">
+            <div class="bg-green-600 text-white p-8 rounded-2xl shadow-2xl text-center transform transition-all scale-105">
+                <h2 class="text-4xl font-bold mb-4">🎉 Parabéns!</h2>
+                <p class="text-lg mb-6">Você completou os requisitos do PDDE.</p>
+                <button onclick="startGame()" class="bg-white text-green-700 font-bold py-3 px-6 rounded-lg shadow hover:bg-green-50 transition">
+                    Jogar Novamente
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-6 flex gap-4">
+        <button onclick="startGame()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded shadow transition">
+            Embaralhar
+        </button>
+        <button onclick="solveGame()" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-6 rounded shadow transition">
+            Resolver
+        </button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const winModal = document.getElementById('winModal');
+
+        const BOARD_SIZE = 600;
+        const TRAY_SIZE = 400;
+        const ROWS = 3;
+        const COLS = 3;
+        const PIECE_W = BOARD_SIZE / COLS;
+        const PIECE_H = BOARD_SIZE / ROWS;
+        const SNAP_DISTANCE = 30;
+
+        let pieces = [];
+        let baseImageCanvas = document.createElement('canvas');
+        let selectedPiece = null;
+        let dragOffsetX = 0;
+        let dragOffsetY = 0;
+
+        // Inicializa o jogo
+        function init() {
+            generateBaseImage();
+            setupEvents();
+            startGame();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Gera a imagem completa original que será cortada em peças
+        function generateBaseImage() {
+            baseImageCanvas.width = BOARD_SIZE;
+            baseImageCanvas.height = BOARD_SIZE;
+            const bCtx = baseImageCanvas.getContext('2d');
+
+            // Fundo
+            bCtx.fillStyle = '#ffffff';
+            bCtx.fillRect(0, 0, BOARD_SIZE, BOARD_SIZE);
+
+            bCtx.textAlign = 'center';
+            bCtx.textBaseline = 'middle';
+            bCtx.fillStyle = '#374151'; // Textos escuros
+
+            // Helper de texto
+            function drawText(lines, cx, cy, font = 'bold 18px Arial') {
+                bCtx.font = font;
+                const lineHeight = parseInt(font.match(/\d+/)[0]) * 1.5;
+                const startY = cy - (lineHeight * (lines.length - 1)) / 2;
+                lines.forEach((line, i) => {
+                    bCtx.fillText(line, cx, startY + i * lineHeight);
+                });
+            }
+
+            // Helper de logo PDDE
+            function drawPDDELogo(cx, cy) {
+                const w = 170, h = 60;
+                const x = cx - w / 2;
+                const y = cy - h / 2;
+                
+                bCtx.fillStyle = '#3b82f6'; // Azul PDDE
+                bCtx.beginPath();
+                bCtx.roundRect(x, y, w, h, 8);
+                bCtx.fill();
+
+                bCtx.fillStyle = '#ffffff';
+                bCtx.textAlign = 'left';
+                bCtx.font = 'bold 26px Arial';
+                bCtx.fillText('PDDE', x + 10, cy);
+                
+                // Linha divisória
+                bCtx.fillRect(x + 90, y + 15, 2, 30);
+                
+                bCtx.font = 'bold 9px Arial';
+                bCtx.fillText('Programa Dinheiro', x + 100, cy - 6);
+                bCtx.fillText('Direto na Escola', x + 100, cy + 8);
+                
+                bCtx.textAlign = 'center'; // Reseta
+                bCtx.fillStyle = '#374151'; 
+            }
+
+            // --- DESENHO DE CADA BLOCO (3x3) ---
+            
+            // [0,0] CNPJ
+            drawText(["CNPJ", "ATIVO E", "REGULAR"], 100, 100);
+            
+            // [0,1] Logo PDDE
+            drawPDDELogo(300, 100);
+            
+            // [0,2] Certidões
+            drawText(["CERTIDÕES", "NEGATIVAS", "(CND)"], 500, 100);
+            
+            // [1,0] Estatuto
+            drawText(["ESTATUTO", "SOCIAL", "REGISTRADO"], 100, 300);
+            
+            // [1,1] Ilustração (Porquinho)
+            bCtx.font = '75px Arial';
+            bCtx.fillText('🐷', 300, 270);
+            bCtx.font = '45px Arial';
+            bCtx.fillText('💻', 260, 320);
+            bCtx.fillText('💰', 340, 320);
+
+            // [1,2] Ata
+            drawText(["ATA DE", "ELEIÇÃO DA", "DIRETORIA"], 500, 300);
+            
+            // [2,0] Cadastro
+            drawText(["CADASTRO NO", "PDDE WEB"], 100, 500);
+            
+            // [2,1] Logo PDDE
+            drawPDDELogo(300, 500);
+            
+            // [2,2] Conta
+            drawText(["CONTA", "BANCÁRIA", "ESPECÍFICA"], 500, 500);
+        }
+
+        // Caminho de recorte das abas do quebra-cabeça
+        function drawJigsawPath(ctx, w, h, t, r, b, l) {
+            const tw = w * 0.2; // Largura da aba
+            const th = w * 0.15; // Altura da aba
+            const cx = w / 2;
+            const cy = h / 2;
+
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+
+            // Topo
+            if (t === 0) ctx.lineTo(w, 0);
+            else {
+                ctx.lineTo(cx - tw, 0);
+                ctx.bezierCurveTo(cx - tw, -th * t, cx - tw * 1.5, -th * t * 1.5, cx, -th * t * 1.5);
+                ctx.bezierCurveTo(cx + tw * 1.5, -th * t * 1.5, cx + tw, -th * t, cx + tw, 0);
+                ctx.lineTo(w, 0);
+            }
+
+            // Direita
+            if (r === 0) ctx.lineTo(w, h);
+            else {
+                ctx.lineTo(w, cy - tw);
+                ctx.bezierCurveTo(w + th * r, cy - tw, w + th * r * 1.5, cy - tw * 1.5, w + th * r * 1.5, cy);
+                ctx.bezierCurveTo(w + th * r * 1.5, cy + tw * 1.5, w + th * r, cy + tw, w, cy + tw);
+                ctx.lineTo(w, h);
+            }
+
+            // Fundo
+            if (b === 0) ctx.lineTo(0, h);
+            else {
+                ctx.lineTo(cx + tw, h);
+                ctx.bezierCurveTo(cx + tw, h + th * b, cx + tw * 1.5, h + th * b * 1.5, cx, h + th * b * 1.5);
+                ctx.bezierCurveTo(cx - tw * 1.5, h + th * b * 1.5, cx - tw, h + th * b, cx - tw, h);
+                ctx.lineTo(0, h);
+            }
+
+            // Esquerda
+            if (l === 0) ctx.lineTo(0, 0);
+            else {
+                ctx.lineTo(0, cy + tw);
+                ctx.bezierCurveTo(-th * l, cy + tw, -th * l * 1.5, cy + tw * 1.5, -th * l * 1.5, cy);
+                ctx.bezierCurveTo(-th * l * 1.5, cy - tw * 1.5, -th * l, cy - tw, 0, cy - tw);
+                ctx.lineTo(0, 0);
+            }
+            
+            ctx.closePath();
+        }
+
+        // Gera as peças com conexões perfeitas e as embaralha
+        function startGame() {
+            winModal.classList.add('hidden');
+            pieces = [];
+            
+            // Lógica para abas (1 = fora, -1 = dentro, 0 = borda)
+            let tabs = Array.from({length: ROWS}, () => Array.from({length: COLS}, () => ({t:0, r:0, b:0, l:0})));
+            
+            for(let r = 0; r < ROWS; r++) {
+                for(let c = 0; c < COLS; c++) {
+                    if(c < COLS - 1) {
+                        const val = Math.random() > 0.5 ? 1 : -1;
+                        tabs[r][c].r = val;
+                        tabs[r][c+1].l = -val;
+                    }
+                    if(r < ROWS - 1) {
+                        const val = Math.random() > 0.5 ? 1 : -1;
+                        tabs[r][c].b = val;
+                        tabs[r+1][c].t = -val;
+                    }
+                }
+            }
+
+            // Criar objetos de peças
+            for(let r = 0; r < ROWS; r++) {
+                for(let c = 0; c < COLS; c++) {
+                    pieces.push({
+                        id: r * COLS + c,
+                        col: c,
+                        row: r,
+                        correctX: c * PIECE_W,
+                        correctY: r * PIECE_H,
+                        x: BOARD_SIZE + Math.random() * (TRAY_SIZE - PIECE_W - 50) + 25, // Dispersas na bandeja direita
+                        y: Math.random() * (canvas.height - PIECE_H - 50) + 25,
+                        tabs: tabs[r][c],
+                        locked: false
+                    });
+                }
+            }
+        }
+
+        function solveGame() {
+            pieces.forEach(p => {
+                p.x = p.correctX;
+                p.y = p.correctY;
+                p.locked = true;
+            });
+            checkWin();
+        }
+
+        function gameLoop() {
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Desenhar área do tabuleiro (Sombra base)
+            ctx.fillStyle = '#f8fafc';
+            ctx.fillRect(0, 0, BOARD_SIZE, BOARD_SIZE);
+            ctx.strokeStyle = '#94a3b8'; // Borda externa do tabuleiro com mais contraste
+            ctx.lineWidth = 2;
+            ctx.strokeRect(0, 0, BOARD_SIZE, BOARD_SIZE);
+
+            // Desenhar guias (slots vazios) com alto contraste
+            pieces.forEach(p => {
+                ctx.save();
+                ctx.translate(p.correctX, p.correctY);
+                drawJigsawPath(ctx, PIECE_W, PIECE_H, p.tabs.t, p.tabs.r, p.tabs.b, p.tabs.l);
+                
+                ctx.fillStyle = '#f1f5f9'; // Fundo levemente cinza para destacar a área vazia
+                ctx.fill();
+                
+                ctx.strokeStyle = '#64748b'; // Cor escura (Slate 500) para destacar bem as bordas
+                ctx.lineWidth = 2;
+                ctx.setLineDash([6, 6]); // Efeito tracejado para indicar "área de soltar"
+                ctx.stroke();
+                
+                ctx.restore();
+            });
+
+            // Divisor entre tabuleiro e bandeja
+            ctx.beginPath();
+            ctx.moveTo(BOARD_SIZE, 0);
+            ctx.lineTo(BOARD_SIZE, canvas.height);
+            ctx.strokeStyle = '#cbd5e1';
+            ctx.lineWidth = 4;
+            ctx.stroke();
+
+            // Renderizar peças: Trancadas primeiro, depois soltas, depois a selecionada por último
+            const lockedPieces = pieces.filter(p => p.locked);
+            const loosePieces = pieces.filter(p => !p.locked && p !== selectedPiece);
+            
+            [...lockedPieces, ...loosePieces].forEach(p => drawPiece(p));
+            if(selectedPiece) drawPiece(selectedPiece, true);
+        }
+
+        function drawPiece(p, isSelected = false) {
+            ctx.save();
+            ctx.translate(p.x, p.y);
+            
+            // Efeito de sombra se estiver sendo movida
+            if (isSelected) {
+                ctx.shadowColor = 'rgba(0,0,0,0.3)';
+                ctx.shadowBlur = 15;
+                ctx.shadowOffsetX = 5;
+                ctx.shadowOffsetY = 5;
+            }
+
+            drawJigsawPath(ctx, PIECE_W, PIECE_H, p.tabs.t, p.tabs.r, p.tabs.b, p.tabs.l);
+            ctx.clip(); // Recorta o formato
+
+            // Desenha a fatia da imagem base correspondente
+            ctx.drawImage(baseImageCanvas, -p.col * PIECE_W, -p.row * PIECE_H);
+            
+            // Borda da peça
+            ctx.strokeStyle = p.locked ? 'transparent' : '#94a3b8';
+            ctx.lineWidth = isSelected ? 3 : 1;
+            ctx.stroke();
+
+            ctx.restore();
+        }
+
+        // --- SISTEMA DE EVENTOS (Mouse & Touch) ---
+
+        function getMousePos(evt) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const clientX = evt.clientX || (evt.touches && evt.touches[0].clientX);
+            const clientY = evt.clientY || (evt.touches && evt.touches[0].clientY);
+            
+            return {
+                x: (clientX - rect.left) * scaleX,
+                y: (clientY - rect.top) * scaleY
+            };
+        }
+
+        function handlePointerDown(e) {
+            if (e.type === 'touchstart') e.preventDefault();
+            const pos = getMousePos(e);
+
+            // Percorre de trás pra frente para pegar a peça superior
+            for (let i = pieces.length - 1; i >= 0; i--) {
+                const p = pieces[i];
+                if (p.locked) continue;
+
+                ctx.save();
+                ctx.translate(p.x, p.y);
+                drawJigsawPath(ctx, PIECE_W, PIECE_H, p.tabs.t, p.tabs.r, p.tabs.b, p.tabs.l);
+                const isHit = ctx.isPointInPath(pos.x, pos.y);
+                ctx.restore();
+
+                if (isHit) {
+                    selectedPiece = p;
+                    dragOffsetX = pos.x - p.x;
+                    dragOffsetY = pos.y - p.y;
+                    // Traz a peça para o final do array (z-index mais alto)
+                    pieces.splice(i, 1);
+                    pieces.push(p);
+                    break;
+                }
+            }
+        }
+
+        function handlePointerMove(e) {
+            if (!selectedPiece) return;
+            if (e.type === 'touchmove') e.preventDefault();
+            const pos = getMousePos(e);
+            selectedPiece.x = pos.x - dragOffsetX;
+            selectedPiece.y = pos.y - dragOffsetY;
+        }
+
+        function handlePointerUp(e) {
+            if (!selectedPiece) return;
+            
+            // Verifica o encaixe
+            const dx = selectedPiece.x - selectedPiece.correctX;
+            const dy = selectedPiece.y - selectedPiece.correctY;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+
+            if (distance < SNAP_DISTANCE) {
+                selectedPiece.x = selectedPiece.correctX;
+                selectedPiece.y = selectedPiece.correctY;
+                selectedPiece.locked = true;
+                checkWin();
+            }
+            
+            selectedPiece = null;
+        }
+
+        function checkWin() {
+            if (pieces.every(p => p.locked)) {
+                setTimeout(() => {
+                    winModal.classList.remove('hidden');
+                }, 300);
+            }
+        }
+
+        function setupEvents() {
+            // Mouse
+            canvas.addEventListener('mousedown', handlePointerDown);
+            window.addEventListener('mousemove', handlePointerMove);
+            window.addEventListener('mouseup', handlePointerUp);
+
+            // Touch
+            canvas.addEventListener('touchstart', handlePointerDown, { passive: false });
+            window.addEventListener('touchmove', handlePointerMove, { passive: false });
+            window.addEventListener('touchend', handlePointerUp);
+        }
+
+        // Inicializar após carregamento completo
+        window.onload = init;
+
+    </script>
+</body>
+</html>
